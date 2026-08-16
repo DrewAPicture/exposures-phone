@@ -33,8 +33,15 @@ class DataLayerClient(context: Context) : DataLayerGateway {
         // The res/values/wear.xml manifest declaration alone can be slow to propagate through Play
         // services' capability index on some devices; registering explicitly at runtime too is the
         // documented, more reliable alternative and costs nothing if the manifest path already won.
+        // Registration outlives the app process, so every launch after the first successful one
+        // throws DUPLICATE_CAPABILITY (ApiException 4006) here — expected, safe to ignore.
         CoroutineScope(Dispatchers.IO).launch {
-            capabilityClient.addLocalCapability(DataLayerPaths.CAPABILITY_EXPOSURES_APP).await()
+            try {
+                capabilityClient.addLocalCapability(DataLayerPaths.CAPABILITY_EXPOSURES_APP).await()
+            } catch (e: Exception) {
+                // Already registered from a previous launch, or a transient GMS failure either way
+                // the manifest declaration remains the fallback — nothing more to do here.
+            }
         }
     }
 

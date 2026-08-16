@@ -19,14 +19,14 @@ import kotlinx.coroutines.tasks.await
  * this class touches real GMS APIs that can't be meaningfully exercised outside a real device or
  * emulator pair, so it needs manual verification per the plan's testing section.
  */
-class DataLayerClient(context: Context) {
+class DataLayerClient(context: Context) : DataLayerGateway {
 
     private val appContext = context.applicationContext
     private val dataClient = Wearable.getDataClient(appContext)
     private val messageClient = Wearable.getMessageClient(appContext)
     private val capabilityClient = Wearable.getCapabilityClient(appContext)
 
-    suspend fun putPayload(path: String, json: String) {
+    override suspend fun putPayload(path: String, json: String) {
         val request = PutDataMapRequest.create(path).apply {
             dataMap.putString(KEY_PAYLOAD, json)
             dataMap.putLong(KEY_UPDATED_AT, System.currentTimeMillis())
@@ -35,7 +35,7 @@ class DataLayerClient(context: Context) {
     }
 
     /** Emits the current payload at [path] immediately, then again on every subsequent change. */
-    fun observePayload(path: String): Flow<String> = callbackFlow {
+    override fun observePayload(path: String): Flow<String> = callbackFlow {
         val buffer = dataClient.dataItems.await()
         try {
             buffer.firstOrNull { it.uri.path == path }
@@ -61,7 +61,7 @@ class DataLayerClient(context: Context) {
     }
 
     /** Sends [payload] to the paired node advertising [DataLayerPaths.CAPABILITY_EXPOSURES_APP]. False if unreachable. */
-    suspend fun sendMessage(path: String, payload: String): Boolean {
+    override suspend fun sendMessage(path: String, payload: String): Boolean {
         val nodeId = findReachableNodeId() ?: return false
         return try {
             messageClient.sendMessage(nodeId, path, payload.toByteArray()).await()

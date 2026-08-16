@@ -1,0 +1,55 @@
+package com.exposures.database.repository
+
+import com.exposures.database.ExposuresDatabase
+import com.exposures.database.mapper.toDomain
+import com.exposures.database.mapper.toEntity
+import com.exposures.model.CameraBody
+import com.exposures.model.Exposure
+import com.exposures.model.FilmRoll
+import com.exposures.model.Lens
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+/**
+ * Phone's data-access surface: full CRUD for the equipment/rolls it's authoritative for, plus a
+ * read-only mirror of the watch's exposures, replaced wholesale on each sync (see [applyExposureSync]).
+ */
+class EquipmentRepository(private val database: ExposuresDatabase) {
+
+    fun observeCameraBodies(): Flow<List<CameraBody>> =
+        database.cameraBodyDao().getAll().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getCameraBody(id: String): CameraBody? = database.cameraBodyDao().getById(id)?.toDomain()
+
+    suspend fun saveCameraBody(body: CameraBody) = database.cameraBodyDao().save(body.toEntity())
+
+    suspend fun deleteCameraBody(body: CameraBody) = database.cameraBodyDao().delete(body.toEntity())
+
+    fun observeLenses(): Flow<List<Lens>> =
+        database.lensDao().getAll().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getLens(id: String): Lens? = database.lensDao().getById(id)?.toDomain()
+
+    suspend fun saveLens(lens: Lens) = database.lensDao().save(lens.toEntity())
+
+    suspend fun deleteLens(lens: Lens) = database.lensDao().delete(lens.toEntity())
+
+    fun observeFilmRolls(): Flow<List<FilmRoll>> =
+        database.filmRollDao().getAll().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getFilmRoll(id: String): FilmRoll? = database.filmRollDao().getById(id)?.toDomain()
+
+    suspend fun saveFilmRoll(roll: FilmRoll) = database.filmRollDao().save(roll.toEntity())
+
+    suspend fun deleteFilmRoll(roll: FilmRoll) = database.filmRollDao().delete(roll.toEntity())
+
+    fun observeExposures(filmRollId: String): Flow<List<Exposure>> =
+        database.exposureDao().getByRoll(filmRollId).map { entities -> entities.map { it.toDomain() } }
+
+    fun observeAllExposures(): Flow<List<Exposure>> =
+        database.exposureDao().getAll().map { entities -> entities.map { it.toDomain() } }
+
+    /** Replaces the entire exposure mirror with what the watch just sent — the watch is authoritative. */
+    suspend fun applyExposureSync(exposures: List<Exposure>) =
+        database.exposureDao().replaceAll(exposures.map { it.toEntity() })
+}

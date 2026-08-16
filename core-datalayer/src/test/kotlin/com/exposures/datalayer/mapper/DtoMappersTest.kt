@@ -1,0 +1,122 @@
+package com.exposures.datalayer.mapper
+
+import com.exposures.model.CameraBody
+import com.exposures.model.Exposure
+import com.exposures.model.FilmFormat
+import com.exposures.model.FilmRoll
+import com.exposures.model.Lens
+import com.exposures.model.PhotoStatus
+import com.exposures.model.RollStatus
+import com.exposures.model.ShutterSpeed
+import com.exposures.model.StopIncrement
+import com.exposures.model.SyncStatus
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class DtoMappersTest {
+
+    @Test
+    fun `camera body round-trips through its dto, independent of local sync status`() {
+        val original = CameraBody(
+            id = "body-1",
+            name = "RZ67 Pro II",
+            manufacturer = "Mamiya",
+            availableShutterSpeeds = ShutterSpeed.standardRange(ShutterSpeed.fraction(400), ShutterSpeed.wholeSeconds(8)),
+            hasBulbMode = true,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.PENDING_SYNC,
+            remoteId = null,
+        )
+
+        val roundTripped = original.toDto().toDomain(syncStatus = SyncStatus.SYNCED)
+
+        assertEquals(original.copy(syncStatus = SyncStatus.SYNCED), roundTripped)
+    }
+
+    @Test
+    fun `lens round-trips through its dto`() {
+        val original = Lens(
+            id = "lens-1",
+            name = "110mm f/2.8 W",
+            minAperture = 2.8,
+            maxAperture = 32.0,
+            stopIncrement = StopIncrement.HALF_STOP,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.SYNCED,
+            remoteId = "remote-1",
+        )
+
+        assertEquals(original, original.toDto().toDomain(syncStatus = SyncStatus.SYNCED))
+    }
+
+    @Test
+    fun `film roll round-trips through its dto`() {
+        val original = FilmRoll(
+            id = "roll-1",
+            name = "Portra 400 — Roll 1",
+            filmStock = "Kodak Portra 400",
+            boxSpeedIso = 400,
+            format = FilmFormat.MEDIUM_FORMAT_120,
+            cameraBodyId = "body-1",
+            targetFrameCount = 10,
+            status = RollStatus.AVAILABLE,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.SYNCED,
+            remoteId = null,
+        )
+
+        assertEquals(original, original.toDto().toDomain(syncStatus = SyncStatus.SYNCED))
+    }
+
+    @Test
+    fun `exposure round-trips through its dto`() {
+        val original = Exposure(
+            id = "exp-1",
+            filmRollId = "roll-1",
+            frameNumber = 3,
+            lensId = "lens-1",
+            shutterSpeed = ShutterSpeed.fraction(250),
+            aperture = 5.6,
+            isoUsed = 400,
+            notes = "backlit",
+            capturedAt = 100L,
+            referencePhotoStatus = PhotoStatus.NONE,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.PENDING_SYNC,
+            remoteId = null,
+        )
+
+        val roundTripped = original.toDto().toDomain(syncStatus = SyncStatus.SYNCED)
+
+        assertEquals(original.copy(syncStatus = SyncStatus.SYNCED), roundTripped)
+    }
+
+    @Test
+    fun `photo status dto reflects the exposure's current status`() {
+        val exposure = Exposure(
+            id = "exp-1",
+            filmRollId = "roll-1",
+            frameNumber = 1,
+            lensId = "lens-1",
+            shutterSpeed = ShutterSpeed.fraction(125),
+            aperture = 8.0,
+            isoUsed = 400,
+            notes = null,
+            capturedAt = 0L,
+            referencePhotoStatus = PhotoStatus.CAPTURED,
+            createdAt = 0L,
+            updatedAt = 0L,
+            syncStatus = SyncStatus.SYNCED,
+            remoteId = null,
+        )
+
+        val dto = exposure.toPhotoStatusDto()
+
+        assertEquals("exp-1", dto.exposureId)
+        assertEquals("CAPTURED", dto.referencePhotoStatus)
+    }
+}

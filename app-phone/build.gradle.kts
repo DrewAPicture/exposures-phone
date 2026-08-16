@@ -42,6 +42,7 @@ dependencies {
     implementation(project(":core-model"))
     implementation(project(":core-database"))
     implementation(project(":core-datalayer"))
+    implementation(project(":core-sync"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -62,11 +63,13 @@ dependencies {
     implementation(libs.camerax.camera2)
     implementation(libs.camerax.lifecycle)
     implementation(libs.concurrent.futures.ktx)
+    implementation(libs.work.runtime.ktx)
 
     testImplementation(libs.junit4)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.work.testing)
     // Test-only: lets tests build an in-memory ExposuresDatabase directly. Production code never
     // touches Room itself — see ExposuresDatabaseProvider in core-database.
     testImplementation(libs.room.runtime)

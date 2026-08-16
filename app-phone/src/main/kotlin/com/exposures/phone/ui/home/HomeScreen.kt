@@ -34,7 +34,12 @@ fun HomeScreen(
 ) {
     val container = appContainer()
     val viewModel: HomeViewModel = viewModel(
-        factory = ExposuresViewModelFactory(container.repository, container.syncPusher, container.dataLayerClient),
+        factory = ExposuresViewModelFactory(
+            container.repository,
+            container.syncPusher,
+            container.dataLayerClient,
+            triggerUpload = container::triggerUpload,
+        ),
     )
     val state by viewModel.uiState.collectAsState()
 
@@ -59,6 +64,24 @@ fun HomeScreen(
             }
 
             PermissionsCard()
+
+            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = if (state.pendingSyncCount == 0) {
+                            "Backend sync: up to date"
+                        } else {
+                            "Backend sync: ${state.pendingSyncCount} pending"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    TextButton(onClick = viewModel::syncNow) { Text("Sync Now") }
+                }
+            }
 
             ListItem(
                 headlineContent = { Text("Camera Bodies") },

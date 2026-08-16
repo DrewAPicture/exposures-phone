@@ -27,6 +27,7 @@ import com.exposures.model.SyncStatus
 import com.exposures.phone.ExposuresApplication
 import com.exposures.phone.MainActivity
 import com.exposures.phone.sync.CaptureResultPublisher
+import com.exposures.phone.sync.UploadScheduler
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
@@ -111,6 +112,7 @@ class CaptureForegroundService : LifecycleService() {
                     lastError = null,
                 ),
             )
+            UploadScheduler.enqueue(applicationContext)
             return PhotoStatus.CAPTURED
         } catch (e: ImageCaptureException) {
             container.repository.saveReferencePhoto(

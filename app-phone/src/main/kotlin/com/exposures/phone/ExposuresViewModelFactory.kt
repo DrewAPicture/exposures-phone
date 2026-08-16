@@ -21,11 +21,12 @@ class ExposuresViewModelFactory(
     private val syncPusher: EquipmentSyncPusher,
     private val dataLayerGateway: DataLayerGateway,
     private val entityId: String? = null,
+    private val triggerUpload: () -> Unit = {},
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
-        HomeViewModel::class.java -> HomeViewModel(repository, dataLayerGateway)
+        HomeViewModel::class.java -> HomeViewModel(repository, dataLayerGateway, triggerUpload)
         CameraBodyListViewModel::class.java -> CameraBodyListViewModel(repository)
         CameraBodyEditViewModel::class.java -> CameraBodyEditViewModel(repository, syncPusher, entityId)
         LensListViewModel::class.java -> LensListViewModel(repository)

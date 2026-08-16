@@ -58,6 +58,7 @@ class WearMessageListenerService : WearableListenerService() {
                         ?: continue
                     serviceScope.launch {
                         ExposureSyncReceiver(container.repository).handlePayload(json)
+                        UploadScheduler.enqueue(applicationContext)
                     }
                 }
             }

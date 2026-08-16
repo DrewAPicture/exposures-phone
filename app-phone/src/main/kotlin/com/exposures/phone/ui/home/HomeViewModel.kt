@@ -19,12 +19,14 @@ data class HomeUiState(
     val lightMeterCount: Int = 0,
     val filmRollCount: Int = 0,
     val exposureCount: Int = 0,
+    val pendingSyncCount: Int = 0, // exposures + reference photos not yet uploaded to the remote backend
     val watchReachable: Boolean? = null, // null while unchecked
 )
 
 class HomeViewModel(
-    repository: EquipmentRepository,
+    private val repository: EquipmentRepository,
     private val gateway: DataLayerGateway,
+    private val triggerUpload: () -> Unit = {},
 ) : ViewModel() {
 
     private val _watchReachable = MutableStateFlow<Boolean?>(null)
@@ -37,12 +39,18 @@ class HomeViewModel(
         repository.observeLightMeters(),
     ) { bodies, lenses, lightMeters -> Triple(bodies.size, lenses.size, lightMeters.size) }
 
+    private val pendingSyncCount = combine(
+        repository.observeDirtyExposures(),
+        repository.observeDirtyReferencePhotos(),
+    ) { exposures, photos -> exposures.size + photos.size }
+
     val uiState: StateFlow<HomeUiState> = combine(
         equipmentCounts,
         repository.observeFilmRolls(),
         repository.observeAllExposures(),
         _watchReachable,
-    ) { (cameraBodyCount, lensCount, lightMeterCount), rolls, exposures, reachable ->
+        pendingSyncCount,
+    ) { (cameraBodyCount, lensCount, lightMeterCount), rolls, exposures, reachable, pendingSync ->
         HomeUiState(
             isLoading = false,
             cameraBodyCount = cameraBodyCount,
@@ -50,6 +58,7 @@ class HomeViewModel(
             lightMeterCount = lightMeterCount,
             filmRollCount = rolls.size,
             exposureCount = exposures.size,
+            pendingSyncCount = pendingSync,
             watchReachable = reachable,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
@@ -63,4 +72,6 @@ class HomeViewModel(
             _watchReachable.value = gateway.findReachableNodeId() != null
         }
     }
+
+    fun syncNow() = triggerUpload()
 }

@@ -9,7 +9,7 @@ android {
     buildToolsVersion = "36.0.0"
 
     defaultConfig {
-        applicationId = "com.exposures.phone"
+        applicationId = "default.exposures.ww.app"
         minSdk = 28
         targetSdk = 37
         versionCode = 1

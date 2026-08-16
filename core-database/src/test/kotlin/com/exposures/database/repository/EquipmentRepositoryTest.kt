@@ -64,6 +64,7 @@ class EquipmentRepositoryTest {
     private fun lens(id: String = UUID.randomUUID().toString()) = Lens(
         id = id,
         name = "110mm f/2.8 W",
+        cameraBodyId = null,
         minAperture = 2.8,
         maxAperture = 32.0,
         stopIncrement = StopIncrement.HALF_STOP,
@@ -159,6 +160,17 @@ class EquipmentRepositoryTest {
 
         repository.deleteLens(savedLens)
         assertNull(repository.getLens(savedLens.id))
+    }
+
+    @Test
+    fun `a lens's associated camera body persists`() = runTest {
+        val body = cameraBody()
+        repository.saveCameraBody(body)
+        val savedLens = lens().copy(cameraBodyId = body.id)
+
+        repository.saveLens(savedLens)
+
+        assertEquals(body.id, repository.getLens(savedLens.id)?.cameraBodyId)
     }
 
     @Test

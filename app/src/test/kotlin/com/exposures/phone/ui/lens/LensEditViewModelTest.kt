@@ -1,6 +1,9 @@
 package com.exposures.phone.ui.lens
 
 import com.exposures.model.StopIncrement
+import com.exposures.model.CameraBody
+import com.exposures.model.ShutterSpeed
+import com.exposures.model.SyncStatus
 import com.exposures.phone.MainDispatcherRule
 import com.exposures.phone.createTestRepository
 import com.exposures.phone.sync.EquipmentSyncPusher
@@ -17,6 +20,18 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class LensEditViewModelTest {
+    private fun cameraBody(id: String = "body-1", name: String = "RZ67 Pro II") = CameraBody(
+        id = id,
+        name = name,
+        manufacturer = "Mamiya",
+        availableShutterSpeeds = listOf(ShutterSpeed.fraction(400)),
+        hasBulbMode = true,
+        createdAt = 0L,
+        updatedAt = 0L,
+        syncStatus = SyncStatus.SYNCED,
+        remoteId = null,
+    )
+
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -51,6 +66,7 @@ class LensEditViewModelTest {
     fun `save persists the parsed aperture values and stop increment`() = runTest {
         val repository = createTestRepository()
         val gateway = FakeDataLayerGateway()
+        repository.saveCameraBody(cameraBody())
         val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("110mm f/2.8 W")
@@ -66,6 +82,37 @@ class LensEditViewModelTest {
         assertEquals(32.0, saved.maxAperture, 0.0)
         assertEquals(StopIncrement.THIRD_STOP, saved.stopIncrement)
         assertTrue(gateway.putPayloads.isNotEmpty())
+    }
+
+    @Test
+    fun `new lens defaults camera body to the first available body`() = runTest {
+        val repository = createTestRepository()
+        repository.saveCameraBody(cameraBody(id = "body-1", name = "RZ67 Pro II"))
+        repository.saveCameraBody(cameraBody(id = "body-2", name = "RZ67 Pro"))
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(state.availableCameraBodies.firstOrNull()?.id, state.cameraBodyId)
+    }
+
+    @Test
+    fun `save persists selected camera body id`() = runTest {
+        val repository = createTestRepository()
+        val gateway = FakeDataLayerGateway()
+        repository.saveCameraBody(cameraBody(id = "body-1"))
+        repository.saveCameraBody(cameraBody(id = "body-2", name = "RB67 Pro S"))
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("180mm f/4.5 W")
+        viewModel.setMinAperture("4.5")
+        viewModel.setMaxAperture("32")
+        viewModel.setCameraBody("body-2")
+
+        viewModel.save()
+        viewModel.uiState.first { it.done }
+
+        assertEquals("body-2", repository.observeLenses().first().single().cameraBodyId)
     }
 
     @Test

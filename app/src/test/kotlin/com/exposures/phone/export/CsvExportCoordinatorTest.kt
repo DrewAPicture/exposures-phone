@@ -35,7 +35,7 @@ class CsvExportCoordinatorTest {
     )
 
     private fun lens(id: String, name: String) = Lens(
-        id = id, name = name, minAperture = 4.5, maxAperture = 45.0, stopIncrement = StopIncrement.HALF_STOP,
+        id = id, name = name, cameraBodyId = null, minAperture = 4.5, maxAperture = 45.0, stopIncrement = StopIncrement.HALF_STOP,
         referencePhotoZoomRatio = 1.0, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
     )
 

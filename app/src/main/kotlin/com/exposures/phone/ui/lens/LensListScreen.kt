@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.exposures.model.Lens
 import com.exposures.phone.ExposuresViewModelFactory
 import com.exposures.phone.ui.appContainer
 
@@ -35,11 +34,15 @@ fun LensListScreen(onAdd: () -> Unit, onEdit: (String) -> Unit) {
         floatingActionButton = { FloatingActionButton(onClick = onAdd) { Text("+", modifier = Modifier.padding(8.dp)) } },
     ) { padding ->
         LazyColumn(modifier = Modifier.fillMaxWidth().padding(padding)) {
-            items(state.lenses) { lens: Lens ->
+            items(state.lenses) { lensItem ->
                 ListItem(
-                    headlineContent = { Text(lens.name) },
-                    supportingContent = { Text("ƒ/${lens.minAperture}–ƒ/${lens.maxAperture}") },
-                    modifier = Modifier.fillMaxWidth().clickable { onEdit(lens.id) },
+                    headlineContent = { Text(lensItem.lens.name) },
+                    supportingContent = {
+                        val apertureText = "ƒ/${lensItem.lens.minAperture}–ƒ/${lensItem.lens.maxAperture}"
+                        val cameraBodyText = lensItem.cameraBodyName?.let { " • $it" } ?: ""
+                        Text(apertureText + cameraBodyText)
+                    },
+                    modifier = Modifier.fillMaxWidth().clickable { onEdit(lensItem.lens.id) },
                 )
             }
         }

@@ -31,7 +31,7 @@ class EquipmentSyncPusherTest {
     )
 
     private fun lens() = Lens(
-        id = "lens-1", name = "110mm f/2.8 W", minAperture = 2.8, maxAperture = 32.0,
+        id = "lens-1", name = "110mm f/2.8 W", cameraBodyId = null, minAperture = 2.8, maxAperture = 32.0,
         stopIncrement = StopIncrement.HALF_STOP, referencePhotoZoomRatio = 1.0, createdAt = 0L, updatedAt = 0L,
         syncStatus = SyncStatus.PENDING_SYNC, remoteId = null,
     )

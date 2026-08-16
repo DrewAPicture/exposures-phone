@@ -3,6 +3,7 @@ package com.exposures.phone.ui.lens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exposures.database.repository.EquipmentRepository
+import com.exposures.model.CameraBody
 import com.exposures.model.Lens
 import com.exposures.model.StopIncrement
 import com.exposures.model.SyncStatus
@@ -10,12 +11,15 @@ import com.exposures.phone.sync.EquipmentSyncPusher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 
 data class LensEditUiState(
     val isLoading: Boolean = true,
     val isNew: Boolean = true,
+    val availableCameraBodies: List<CameraBody> = emptyList(),
+    val cameraBodyId: String? = null,
     val name: String = "",
     val minAperture: String = "",
     val maxAperture: String = "",
@@ -47,25 +51,32 @@ class LensEditViewModel(
     val uiState: StateFlow<LensEditUiState> = _uiState.asStateFlow()
 
     init {
-        if (existingId == null) {
-            _uiState.value = _uiState.value.copy(isLoading = false)
-        } else {
-            viewModelScope.launch {
-                val lens = repository.getLens(existingId)
-                _uiState.value = if (lens == null) {
-                    _uiState.value.copy(isLoading = false)
-                } else {
-                    _uiState.value.copy(
-                        isLoading = false,
-                        name = lens.name,
-                        minAperture = lens.minAperture.toString(),
-                        maxAperture = lens.maxAperture.toString(),
-                        stopIncrement = lens.stopIncrement,
-                        referencePhotoZoomRatio = lens.referencePhotoZoomRatio.toString(),
-                    )
-                }
+        viewModelScope.launch {
+            val cameraBodies = repository.observeCameraBodies().first()
+            val lens = existingId?.let { repository.getLens(it) }
+            _uiState.value = if (lens == null) {
+                _uiState.value.copy(
+                    isLoading = false,
+                    availableCameraBodies = cameraBodies,
+                    cameraBodyId = cameraBodies.firstOrNull()?.id,
+                )
+            } else {
+                _uiState.value.copy(
+                    isLoading = false,
+                    availableCameraBodies = cameraBodies,
+                    cameraBodyId = lens.cameraBodyId ?: cameraBodies.firstOrNull()?.id,
+                    name = lens.name,
+                    minAperture = lens.minAperture.toString(),
+                    maxAperture = lens.maxAperture.toString(),
+                    stopIncrement = lens.stopIncrement,
+                    referencePhotoZoomRatio = lens.referencePhotoZoomRatio.toString(),
+                )
             }
         }
+    }
+
+    fun setCameraBody(cameraBodyId: String?) {
+        _uiState.value = _uiState.value.copy(cameraBodyId = cameraBodyId)
     }
 
     fun setName(name: String) {
@@ -97,6 +108,7 @@ class LensEditViewModel(
             val lens = Lens(
                 id = id,
                 name = state.name,
+                cameraBodyId = state.cameraBodyId,
                 minAperture = requireNotNull(state.minAperture.toDoubleOrNull()),
                 maxAperture = requireNotNull(state.maxAperture.toDoubleOrNull()),
                 stopIncrement = state.stopIncrement,

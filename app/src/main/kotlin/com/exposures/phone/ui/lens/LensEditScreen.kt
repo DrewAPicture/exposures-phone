@@ -42,6 +42,14 @@ fun LensEditScreen(id: String?, onDone: () -> Unit) {
                 label = { Text("Name") },
                 modifier = Modifier.fillMaxWidth(),
             )
+            DropdownField(
+                label = "Camera body (optional)",
+                value = state.availableCameraBodies.firstOrNull { it.id == state.cameraBodyId },
+                options = listOf(null) + state.availableCameraBodies,
+                optionLabel = { it?.name ?: "None" },
+                onValueChange = { viewModel.setCameraBody(it?.id) },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
             OutlinedTextField(
                 value = state.minAperture,
                 onValueChange = viewModel::setMinAperture,

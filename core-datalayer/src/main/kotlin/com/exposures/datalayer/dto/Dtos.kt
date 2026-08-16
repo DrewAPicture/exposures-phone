@@ -25,6 +25,7 @@ data class CameraBodyDto(
 data class LensDto(
     val id: String,
     val name: String,
+    val cameraBodyId: String? = null,
     val minAperture: Double,
     val maxAperture: Double,
     val stopIncrement: String,

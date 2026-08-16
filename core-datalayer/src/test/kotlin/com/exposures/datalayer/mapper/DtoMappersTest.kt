@@ -41,6 +41,7 @@ class DtoMappersTest {
         val original = Lens(
             id = "lens-1",
             name = "110mm f/2.8 W",
+            cameraBodyId = "body-1",
             minAperture = 2.8,
             maxAperture = 32.0,
             stopIncrement = StopIncrement.HALF_STOP,

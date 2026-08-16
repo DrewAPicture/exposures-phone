@@ -4,6 +4,8 @@ package com.exposures.model
 data class Lens(
     val id: String,
     val name: String,
+    /** The body this lens is used with, if configured — nullable so existing lenses don't need backfilling. */
+    val cameraBodyId: String?,
     val minAperture: Double,
     val maxAperture: Double,
     val stopIncrement: StopIncrement,

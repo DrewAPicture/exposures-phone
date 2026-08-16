@@ -8,9 +8,12 @@ import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -25,6 +28,15 @@ class DataLayerClient(context: Context) : DataLayerGateway {
     private val dataClient = Wearable.getDataClient(appContext)
     private val messageClient = Wearable.getMessageClient(appContext)
     private val capabilityClient = Wearable.getCapabilityClient(appContext)
+
+    init {
+        // The res/values/wear.xml manifest declaration alone can be slow to propagate through Play
+        // services' capability index on some devices; registering explicitly at runtime too is the
+        // documented, more reliable alternative and costs nothing if the manifest path already won.
+        CoroutineScope(Dispatchers.IO).launch {
+            capabilityClient.addLocalCapability(DataLayerPaths.CAPABILITY_EXPOSURES_APP).await()
+        }
+    }
 
     override suspend fun putPayload(path: String, json: String) {
         val request = PutDataMapRequest.create(path).apply {

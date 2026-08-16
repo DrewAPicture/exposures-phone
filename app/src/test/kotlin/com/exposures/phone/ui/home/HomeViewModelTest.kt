@@ -4,14 +4,19 @@ import com.exposures.model.Exposure
 import com.exposures.model.PhotoStatus
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.SyncStatus
+import com.exposures.datalayer.DataLayerGateway
 import com.exposures.phone.MainDispatcherRule
 import com.exposures.phone.createTestRepository
 import com.exposures.phone.export.CsvExportCoordinator
 import com.exposures.phone.sync.FakeDataLayerGateway
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -58,6 +63,32 @@ class HomeViewModelTest {
 
         val state = viewModel.uiState.first { it.watchReachable == true }
         assertEquals(true, state.watchReachable)
+    }
+
+    /** A gateway whose [findReachableNodeId] suspends until a result is pushed, so a test can observe in-flight state. */
+    private class SuspendingGateway : DataLayerGateway {
+        val results = Channel<String?>(Channel.UNLIMITED)
+        override suspend fun putPayload(path: String, json: String) = Unit
+        override fun observePayload(path: String): Flow<String> = emptyFlow()
+        override suspend fun sendMessage(path: String, payload: String): Boolean = true
+        override suspend fun findReachableNodeId(): String? = results.receive()
+    }
+
+    @Test
+    fun `refreshPairingStatus resets watchReachable to unknown while a new check is in flight`() = runTest {
+        val repository = createTestRepository()
+        val gateway = SuspendingGateway()
+        gateway.results.trySend("watch-node")
+        val viewModel = HomeViewModel(repository, gateway, CsvExportCoordinator(repository))
+        viewModel.uiState.first { it.watchReachable == true }
+
+        viewModel.refreshPairingStatus()
+
+        assertNull(viewModel.uiState.value.watchReachable)
+
+        gateway.results.trySend(null)
+        val finalState = viewModel.uiState.first { it.watchReachable == false }
+        assertEquals(false, finalState.watchReachable)
     }
 
     private fun exposure(id: String, syncStatus: SyncStatus) = Exposure(

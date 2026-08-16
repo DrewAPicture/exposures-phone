@@ -70,6 +70,7 @@ class HomeViewModel(
     }
 
     fun refreshPairingStatus() {
+        _watchReachable.value = null
         viewModelScope.launch {
             _watchReachable.value = gateway.findReachableNodeId() != null
         }

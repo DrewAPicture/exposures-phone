@@ -19,4 +19,5 @@ rootProject.name = "exposures-phone"
 include(":core-model")
 include(":core-datalayer")
 include(":core-database")
+include(":core-sync")
 include(":app-phone")

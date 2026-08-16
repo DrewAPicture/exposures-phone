@@ -28,7 +28,7 @@ class DataLayerClient(context: Context) : DataLayerGateway {
 
     override suspend fun putPayload(path: String, json: String) {
         val request = PutDataMapRequest.create(path).apply {
-            dataMap.putString(KEY_PAYLOAD, json)
+            dataMap.putString(DataLayerPaths.KEY_PAYLOAD, json)
             dataMap.putLong(KEY_UPDATED_AT, System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
         dataClient.putDataItem(request).await()
@@ -39,7 +39,7 @@ class DataLayerClient(context: Context) : DataLayerGateway {
         val buffer = dataClient.dataItems.await()
         try {
             buffer.firstOrNull { it.uri.path == path }
-                ?.let { DataMapItem.fromDataItem(it).dataMap.getString(KEY_PAYLOAD) }
+                ?.let { DataMapItem.fromDataItem(it).dataMap.getString(DataLayerPaths.KEY_PAYLOAD) }
                 ?.let { trySend(it) }
         } finally {
             buffer.release()
@@ -49,7 +49,7 @@ class DataLayerClient(context: Context) : DataLayerGateway {
             try {
                 for (event in events) {
                     if (event.type == DataEvent.TYPE_CHANGED && event.dataItem.uri.path == path) {
-                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString(KEY_PAYLOAD)?.let { trySend(it) }
+                        DataMapItem.fromDataItem(event.dataItem).dataMap.getString(DataLayerPaths.KEY_PAYLOAD)?.let { trySend(it) }
                     }
                 }
             } finally {
@@ -79,7 +79,6 @@ class DataLayerClient(context: Context) : DataLayerGateway {
     }
 
     companion object {
-        private const val KEY_PAYLOAD = "payload"
         private const val KEY_UPDATED_AT = "updatedAt"
     }
 }

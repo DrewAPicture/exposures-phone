@@ -22,4 +22,7 @@ object DataLayerPaths {
 
     /** Capability both apps advertise so each side can find the other's connected node. */
     const val CAPABILITY_EXPOSURES_APP = "exposures_app"
+
+    /** DataMap key each DataItem's JSON payload is stored under — see [DataLayerClient.putPayload]. */
+    const val KEY_PAYLOAD = "payload"
 }

@@ -8,6 +8,7 @@ class FakeDataLayerGateway : DataLayerGateway {
     val putPayloads = mutableListOf<Pair<String, String>>()
     val sentMessages = mutableListOf<Pair<String, String>>()
     var sendMessageResult = true
+    var reachableNodeId: String? = "fake-node-id"
 
     private val payloadFlows = mutableMapOf<String, MutableSharedFlow<String>>()
 
@@ -21,6 +22,8 @@ class FakeDataLayerGateway : DataLayerGateway {
         sentMessages.add(path to payload)
         return sendMessageResult
     }
+
+    override suspend fun findReachableNodeId(): String? = reachableNodeId
 
     suspend fun emit(path: String, json: String) {
         flowFor(path).emit(json)

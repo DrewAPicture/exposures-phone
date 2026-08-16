@@ -10,4 +10,7 @@ interface DataLayerGateway {
     suspend fun putPayload(path: String, json: String)
     fun observePayload(path: String): Flow<String>
     suspend fun sendMessage(path: String, payload: String): Boolean
+
+    /** The paired node's id, if currently reachable — null otherwise (e.g. out of Bluetooth range). */
+    suspend fun findReachableNodeId(): String?
 }

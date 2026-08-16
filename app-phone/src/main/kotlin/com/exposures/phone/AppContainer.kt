@@ -5,6 +5,7 @@ import com.exposures.database.ExposuresDatabase
 import com.exposures.database.ExposuresDatabaseProvider
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerClient
+import com.exposures.phone.sync.EquipmentSyncPusher
 
 /**
  * Hand-rolled DI container, matching the same reasoning as exposures-watch's AppContainer: this
@@ -13,6 +14,7 @@ import com.exposures.datalayer.DataLayerClient
 interface AppContainer {
     val repository: EquipmentRepository
     val dataLayerClient: DataLayerClient
+    val syncPusher: EquipmentSyncPusher
 }
 
 class DefaultAppContainer(private val application: Application) : AppContainer {
@@ -21,4 +23,5 @@ class DefaultAppContainer(private val application: Application) : AppContainer {
 
     override val repository: EquipmentRepository by lazy { EquipmentRepository(database) }
     override val dataLayerClient: DataLayerClient by lazy { DataLayerClient(application) }
+    override val syncPusher: EquipmentSyncPusher by lazy { EquipmentSyncPusher(repository, dataLayerClient) }
 }

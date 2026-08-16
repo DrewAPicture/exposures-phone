@@ -71,7 +71,7 @@ class DataLayerClient(context: Context) : DataLayerGateway {
         }
     }
 
-    suspend fun findReachableNodeId(): String? {
+    override suspend fun findReachableNodeId(): String? {
         val capabilityInfo = capabilityClient
             .getCapability(DataLayerPaths.CAPABILITY_EXPOSURES_APP, CapabilityClient.FILTER_REACHABLE)
             .await()

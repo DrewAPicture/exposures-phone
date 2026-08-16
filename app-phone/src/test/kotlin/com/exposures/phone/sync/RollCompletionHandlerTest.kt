@@ -40,6 +40,7 @@ class RollCompletionHandlerTest {
         boxSpeedIso = 400,
         format = FilmFormat.MEDIUM_FORMAT_120,
         cameraBodyId = "body-1",
+        lightMeterId = null,
         targetFrameCount = 10,
         status = status,
         createdAt = 0L,

@@ -7,6 +7,7 @@ import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
+import com.exposures.model.LightMeter
 import com.exposures.model.PhotoStatus
 import com.exposures.model.ReferencePhoto
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,15 @@ class EquipmentRepository(private val database: ExposuresDatabase) {
     suspend fun saveLens(lens: Lens) = database.lensDao().save(lens.toEntity())
 
     suspend fun deleteLens(lens: Lens) = database.lensDao().delete(lens.toEntity())
+
+    fun observeLightMeters(): Flow<List<LightMeter>> =
+        database.lightMeterDao().getAll().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getLightMeter(id: String): LightMeter? = database.lightMeterDao().getById(id)?.toDomain()
+
+    suspend fun saveLightMeter(lightMeter: LightMeter) = database.lightMeterDao().save(lightMeter.toEntity())
+
+    suspend fun deleteLightMeter(lightMeter: LightMeter) = database.lightMeterDao().delete(lightMeter.toEntity())
 
     fun observeFilmRolls(): Flow<List<FilmRoll>> =
         database.filmRollDao().getAll().map { entities -> entities.map { it.toDomain() } }

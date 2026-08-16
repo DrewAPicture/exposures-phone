@@ -26,6 +26,7 @@ class CaptureResultPublisherTest {
         shutterSpeed = ShutterSpeed.fraction(125),
         aperture = 8.0,
         isoUsed = 400,
+        zone = null,
         notes = null,
         capturedAt = 0L,
         referencePhotoStatus = PhotoStatus.NONE,

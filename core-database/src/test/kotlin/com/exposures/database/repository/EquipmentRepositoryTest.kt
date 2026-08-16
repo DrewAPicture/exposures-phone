@@ -9,6 +9,8 @@ import com.exposures.model.Exposure
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
+import com.exposures.model.LightMeter
+import com.exposures.model.LightMeterType
 import com.exposures.model.PhotoStatus
 import com.exposures.model.ReferencePhoto
 import com.exposures.model.RollStatus
@@ -72,13 +74,25 @@ class EquipmentRepositoryTest {
         remoteId = null,
     )
 
-    private fun filmRoll(id: String = UUID.randomUUID().toString(), cameraBodyId: String) = FilmRoll(
+    private fun lightMeter(id: String = UUID.randomUUID().toString()) = LightMeter(
+        id = id,
+        name = "Spotmeter V",
+        manufacturer = "Pentax",
+        type = LightMeterType.SPOT,
+        createdAt = 0L,
+        updatedAt = 0L,
+        syncStatus = SyncStatus.PENDING_SYNC,
+        remoteId = null,
+    )
+
+    private fun filmRoll(id: String = UUID.randomUUID().toString(), cameraBodyId: String, lightMeterId: String? = null) = FilmRoll(
         id = id,
         name = "Portra 400 — Roll 1",
         filmStock = "Kodak Portra 400",
         boxSpeedIso = 400,
         format = FilmFormat.MEDIUM_FORMAT_120,
         cameraBodyId = cameraBodyId,
+        lightMeterId = lightMeterId,
         targetFrameCount = 10,
         status = RollStatus.AVAILABLE,
         createdAt = 0L,
@@ -95,6 +109,7 @@ class EquipmentRepositoryTest {
         shutterSpeed = ShutterSpeed.fraction(125),
         aperture = 8.0,
         isoUsed = 400,
+        zone = null,
         notes = null,
         capturedAt = 0L,
         referencePhotoStatus = PhotoStatus.NONE,
@@ -147,6 +162,16 @@ class EquipmentRepositoryTest {
     }
 
     @Test
+    fun `light meter CRUD round-trips`() = runTest {
+        val savedLightMeter = lightMeter()
+        repository.saveLightMeter(savedLightMeter)
+        assertEquals(savedLightMeter, repository.getLightMeter(savedLightMeter.id))
+
+        repository.deleteLightMeter(savedLightMeter)
+        assertNull(repository.getLightMeter(savedLightMeter.id))
+    }
+
+    @Test
     fun `film roll CRUD round-trips`() = runTest {
         val body = cameraBody()
         repository.saveCameraBody(body)
@@ -155,6 +180,19 @@ class EquipmentRepositoryTest {
         repository.saveFilmRoll(roll)
 
         assertEquals(roll, repository.getFilmRoll(roll.id))
+    }
+
+    @Test
+    fun `film roll CRUD round-trips with a light meter assigned`() = runTest {
+        val body = cameraBody()
+        repository.saveCameraBody(body)
+        val meter = lightMeter()
+        repository.saveLightMeter(meter)
+        val roll = filmRoll(cameraBodyId = body.id, lightMeterId = meter.id)
+
+        repository.saveFilmRoll(roll)
+
+        assertEquals(meter.id, repository.getFilmRoll(roll.id)?.lightMeterId)
     }
 
     @Test

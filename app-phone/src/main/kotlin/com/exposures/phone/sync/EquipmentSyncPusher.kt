@@ -27,6 +27,11 @@ class EquipmentSyncPusher(
         gateway.putPayload(DataLayerPaths.LENSES, DataLayerJson.encodeLenses(lenses))
     }
 
+    suspend fun pushLightMeters() {
+        val lightMeters = repository.observeLightMeters().first().map { it.toDto() }
+        gateway.putPayload(DataLayerPaths.LIGHT_METERS, DataLayerJson.encodeLightMeters(lightMeters))
+    }
+
     suspend fun pushFilmRolls() {
         val rolls = repository.observeFilmRolls().first().map { it.toDto() }
         gateway.putPayload(DataLayerPaths.ROLLS, DataLayerJson.encodeRolls(rolls))

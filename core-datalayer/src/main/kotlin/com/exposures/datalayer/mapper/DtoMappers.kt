@@ -4,6 +4,7 @@ import com.exposures.datalayer.dto.CameraBodyDto
 import com.exposures.datalayer.dto.ExposureDto
 import com.exposures.datalayer.dto.FilmRollDto
 import com.exposures.datalayer.dto.LensDto
+import com.exposures.datalayer.dto.LightMeterDto
 import com.exposures.datalayer.dto.PhotoStatusDto
 import com.exposures.datalayer.dto.ShutterSpeedDto
 import com.exposures.model.CameraBody
@@ -11,6 +12,8 @@ import com.exposures.model.Exposure
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
+import com.exposures.model.LightMeter
+import com.exposures.model.LightMeterType
 import com.exposures.model.PhotoStatus
 import com.exposures.model.RollStatus
 import com.exposures.model.ShutterSpeed
@@ -71,6 +74,27 @@ fun LensDto.toDomain(syncStatus: SyncStatus) = Lens(
     remoteId = remoteId,
 )
 
+fun LightMeter.toDto() = LightMeterDto(
+    id = id,
+    name = name,
+    manufacturer = manufacturer,
+    type = type.name,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    remoteId = remoteId,
+)
+
+fun LightMeterDto.toDomain(syncStatus: SyncStatus) = LightMeter(
+    id = id,
+    name = name,
+    manufacturer = manufacturer,
+    type = LightMeterType.valueOf(type),
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    syncStatus = syncStatus,
+    remoteId = remoteId,
+)
+
 fun FilmRoll.toDto() = FilmRollDto(
     id = id,
     name = name,
@@ -78,6 +102,7 @@ fun FilmRoll.toDto() = FilmRollDto(
     boxSpeedIso = boxSpeedIso,
     format = format.name,
     cameraBodyId = cameraBodyId,
+    lightMeterId = lightMeterId,
     targetFrameCount = targetFrameCount,
     status = status.name,
     createdAt = createdAt,
@@ -92,6 +117,7 @@ fun FilmRollDto.toDomain(syncStatus: SyncStatus) = FilmRoll(
     boxSpeedIso = boxSpeedIso,
     format = FilmFormat.valueOf(format),
     cameraBodyId = cameraBodyId,
+    lightMeterId = lightMeterId,
     targetFrameCount = targetFrameCount,
     status = RollStatus.valueOf(status),
     createdAt = createdAt,
@@ -108,6 +134,7 @@ fun Exposure.toDto() = ExposureDto(
     shutterSpeed = shutterSpeed.toDto(),
     aperture = aperture,
     isoUsed = isoUsed,
+    zone = zone,
     notes = notes,
     capturedAt = capturedAt,
     referencePhotoStatus = referencePhotoStatus.name,
@@ -124,6 +151,7 @@ fun ExposureDto.toDomain(syncStatus: SyncStatus) = Exposure(
     shutterSpeed = shutterSpeed.toDomain(),
     aperture = aperture,
     isoUsed = isoUsed,
+    zone = zone,
     notes = notes,
     capturedAt = capturedAt,
     referencePhotoStatus = PhotoStatus.valueOf(referencePhotoStatus),

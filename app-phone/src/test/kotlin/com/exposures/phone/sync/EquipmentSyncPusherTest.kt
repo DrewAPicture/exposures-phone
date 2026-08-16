@@ -7,6 +7,8 @@ import com.exposures.model.CameraBody
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
+import com.exposures.model.LightMeter
+import com.exposures.model.LightMeterType
 import com.exposures.model.RollStatus
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.StopIncrement
@@ -34,9 +36,14 @@ class EquipmentSyncPusherTest {
         syncStatus = SyncStatus.PENDING_SYNC, remoteId = null,
     )
 
+    private fun lightMeter() = LightMeter(
+        id = "meter-1", name = "Spotmeter V", manufacturer = "Pentax", type = LightMeterType.SPOT,
+        createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.PENDING_SYNC, remoteId = null,
+    )
+
     private fun filmRoll() = FilmRoll(
         id = "roll-1", name = "Portra 400", filmStock = "Kodak Portra 400", boxSpeedIso = 400,
-        format = FilmFormat.MEDIUM_FORMAT_120, cameraBodyId = "body-1", targetFrameCount = 10,
+        format = FilmFormat.MEDIUM_FORMAT_120, cameraBodyId = "body-1", lightMeterId = null, targetFrameCount = 10,
         status = RollStatus.AVAILABLE, createdAt = 0L, updatedAt = 0L,
         syncStatus = SyncStatus.PENDING_SYNC, remoteId = null,
     )
@@ -65,6 +72,19 @@ class EquipmentSyncPusherTest {
 
         val payload = requireNotNull(gateway.lastPayload(DataLayerPaths.LENSES))
         assertEquals("lens-1", DataLayerJson.decodeLenses(payload).single().id)
+    }
+
+    @Test
+    fun `pushLightMeters puts the current list at the light-meters path`() = runTest {
+        val repository = createTestRepository()
+        repository.saveLightMeter(lightMeter())
+        val gateway = FakeDataLayerGateway()
+        val pusher = EquipmentSyncPusher(repository, gateway)
+
+        pusher.pushLightMeters()
+
+        val payload = requireNotNull(gateway.lastPayload(DataLayerPaths.LIGHT_METERS))
+        assertEquals("meter-1", DataLayerJson.decodeLightMeters(payload).single().id)
     }
 
     @Test

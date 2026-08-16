@@ -16,8 +16,13 @@ import com.exposures.model.SyncStatus
             parentColumns = ["id"],
             childColumns = ["cameraBodyId"],
         ),
+        ForeignKey(
+            entity = LightMeterEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["lightMeterId"],
+        ),
     ],
-    indices = [Index("cameraBodyId")],
+    indices = [Index("cameraBodyId"), Index("lightMeterId")],
 )
 data class FilmRollEntity(
     @PrimaryKey val id: String,
@@ -26,6 +31,7 @@ data class FilmRollEntity(
     val boxSpeedIso: Int,
     val format: FilmFormat,
     val cameraBodyId: String,
+    val lightMeterId: String?,
     val targetFrameCount: Int,
     val status: RollStatus,
     val createdAt: Long,

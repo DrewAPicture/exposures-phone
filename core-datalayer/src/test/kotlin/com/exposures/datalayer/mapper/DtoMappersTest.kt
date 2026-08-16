@@ -5,6 +5,8 @@ import com.exposures.model.Exposure
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
+import com.exposures.model.LightMeter
+import com.exposures.model.LightMeterType
 import com.exposures.model.PhotoStatus
 import com.exposures.model.RollStatus
 import com.exposures.model.ShutterSpeed
@@ -53,7 +55,23 @@ class DtoMappersTest {
     }
 
     @Test
-    fun `film roll round-trips through its dto`() {
+    fun `light meter round-trips through its dto`() {
+        val original = LightMeter(
+            id = "meter-1",
+            name = "Spotmeter V",
+            manufacturer = "Pentax",
+            type = LightMeterType.SPOT,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.SYNCED,
+            remoteId = "remote-1",
+        )
+
+        assertEquals(original, original.toDto().toDomain(syncStatus = SyncStatus.SYNCED))
+    }
+
+    @Test
+    fun `film roll round-trips through its dto, including an unset light meter`() {
         val original = FilmRoll(
             id = "roll-1",
             name = "Portra 400 — Roll 1",
@@ -61,6 +79,7 @@ class DtoMappersTest {
             boxSpeedIso = 400,
             format = FilmFormat.MEDIUM_FORMAT_120,
             cameraBodyId = "body-1",
+            lightMeterId = null,
             targetFrameCount = 10,
             status = RollStatus.AVAILABLE,
             createdAt = 1L,
@@ -73,7 +92,28 @@ class DtoMappersTest {
     }
 
     @Test
-    fun `exposure round-trips through its dto`() {
+    fun `film roll round-trips through its dto with a light meter assigned`() {
+        val original = FilmRoll(
+            id = "roll-1",
+            name = "HP5 Plus — Roll 1",
+            filmStock = "Ilford HP5 Plus",
+            boxSpeedIso = 400,
+            format = FilmFormat.MEDIUM_FORMAT_120,
+            cameraBodyId = "body-1",
+            lightMeterId = "meter-1",
+            targetFrameCount = 10,
+            status = RollStatus.AVAILABLE,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.SYNCED,
+            remoteId = null,
+        )
+
+        assertEquals(original, original.toDto().toDomain(syncStatus = SyncStatus.SYNCED))
+    }
+
+    @Test
+    fun `exposure round-trips through its dto, including a zone`() {
         val original = Exposure(
             id = "exp-1",
             filmRollId = "roll-1",
@@ -82,6 +122,32 @@ class DtoMappersTest {
             shutterSpeed = ShutterSpeed.fraction(250),
             aperture = 5.6,
             isoUsed = 400,
+            zone = 3,
+            notes = "backlit",
+            capturedAt = 100L,
+            referencePhotoStatus = PhotoStatus.NONE,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.PENDING_SYNC,
+            remoteId = null,
+        )
+
+        val roundTripped = original.toDto().toDomain(syncStatus = SyncStatus.SYNCED)
+
+        assertEquals(original.copy(syncStatus = SyncStatus.SYNCED), roundTripped)
+    }
+
+    @Test
+    fun `exposure with no zone round-trips through its dto`() {
+        val original = Exposure(
+            id = "exp-1",
+            filmRollId = "roll-1",
+            frameNumber = 3,
+            lensId = "lens-1",
+            shutterSpeed = ShutterSpeed.fraction(250),
+            aperture = 5.6,
+            isoUsed = 400,
+            zone = null,
             notes = "backlit",
             capturedAt = 100L,
             referencePhotoStatus = PhotoStatus.NONE,
@@ -106,6 +172,7 @@ class DtoMappersTest {
             shutterSpeed = ShutterSpeed.fraction(125),
             aperture = 8.0,
             isoUsed = 400,
+            zone = null,
             notes = null,
             capturedAt = 0L,
             referencePhotoStatus = PhotoStatus.CAPTURED,

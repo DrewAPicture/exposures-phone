@@ -7,6 +7,7 @@ import com.exposures.datalayer.dto.CompleteRollCommand
 import com.exposures.datalayer.dto.ExposureDto
 import com.exposures.datalayer.dto.FilmRollDto
 import com.exposures.datalayer.dto.LensDto
+import com.exposures.datalayer.dto.LightMeterDto
 import com.exposures.datalayer.dto.PhotoStatusDto
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -20,6 +21,9 @@ object DataLayerJson {
 
     fun encodeLenses(value: List<LensDto>): String = instance.encodeToString(value)
     fun decodeLenses(json: String): List<LensDto> = instance.decodeFromString(json)
+
+    fun encodeLightMeters(value: List<LightMeterDto>): String = instance.encodeToString(value)
+    fun decodeLightMeters(json: String): List<LightMeterDto> = instance.decodeFromString(json)
 
     fun encodeRolls(value: List<FilmRollDto>): String = instance.encodeToString(value)
     fun decodeRolls(json: String): List<FilmRollDto> = instance.decodeFromString(json)

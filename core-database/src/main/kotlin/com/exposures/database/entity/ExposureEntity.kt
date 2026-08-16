@@ -23,6 +23,7 @@ data class ExposureEntity(
     val shutterSpeed: ShutterSpeed,
     val aperture: Double,
     val isoUsed: Int,
+    val zone: Int?,
     val notes: String?,
     val capturedAt: Long,
     val referencePhotoStatus: PhotoStatus,

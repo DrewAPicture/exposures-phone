@@ -35,6 +35,17 @@ data class LensDto(
 )
 
 @Serializable
+data class LightMeterDto(
+    val id: String,
+    val name: String,
+    val manufacturer: String,
+    val type: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val remoteId: String? = null,
+)
+
+@Serializable
 data class FilmRollDto(
     val id: String,
     val name: String,
@@ -42,6 +53,7 @@ data class FilmRollDto(
     val boxSpeedIso: Int,
     val format: String,
     val cameraBodyId: String,
+    val lightMeterId: String? = null,
     val targetFrameCount: Int,
     val status: String,
     val createdAt: Long,
@@ -58,6 +70,7 @@ data class ExposureDto(
     val shutterSpeed: ShutterSpeedDto,
     val aperture: Double,
     val isoUsed: Int,
+    val zone: Int? = null,
     val notes: String? = null,
     val capturedAt: Long,
     val referencePhotoStatus: String,

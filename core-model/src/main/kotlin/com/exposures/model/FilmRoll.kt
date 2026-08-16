@@ -8,6 +8,7 @@ data class FilmRoll(
     val boxSpeedIso: Int,
     val format: FilmFormat,
     val cameraBodyId: String,
+    val lightMeterId: String?,
     val targetFrameCount: Int,
     val status: RollStatus,
     val createdAt: Long,

@@ -9,6 +9,8 @@ data class Exposure(
     val shutterSpeed: ShutterSpeed,
     val aperture: Double,
     val isoUsed: Int,
+    /** 0..10 (Zone 0..X); set only when the roll's light meter is [LightMeterType.SPOT]. */
+    val zone: Int?,
     val notes: String?,
     val capturedAt: Long,
     val referencePhotoStatus: PhotoStatus,

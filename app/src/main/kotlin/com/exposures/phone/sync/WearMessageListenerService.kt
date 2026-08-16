@@ -33,6 +33,8 @@ class WearMessageListenerService : WearableListenerService() {
         when (messageEvent.path) {
             DataLayerPaths.CAPTURE_PHOTO_COMMAND -> handleCapturePhoto(messageEvent)
             DataLayerPaths.COMPLETE_ROLL_COMMAND -> handleCompleteRoll(messageEvent)
+            DataLayerPaths.REQUEST_ROLLS_SYNC_COMMAND -> handleRequestRollsSync()
+            DataLayerPaths.CONNECTIVITY_PING_COMMAND -> handleConnectivityPing()
         }
     }
 
@@ -47,6 +49,18 @@ class WearMessageListenerService : WearableListenerService() {
         val command = DataLayerJson.decodeCompleteRollCommand(String(messageEvent.data))
         serviceScope.launch {
             RollCompletionHandler(container.repository, container.syncPusher).handle(command.rollId)
+        }
+    }
+
+    private fun handleRequestRollsSync() {
+        serviceScope.launch {
+            RequestRollsSyncHandler(container.syncPusher).handle()
+        }
+    }
+
+    private fun handleConnectivityPing() {
+        serviceScope.launch {
+            container.dataLayerClient.sendMessage(DataLayerPaths.CONNECTIVITY_PING_ACK_COMMAND, "ack")
         }
     }
 

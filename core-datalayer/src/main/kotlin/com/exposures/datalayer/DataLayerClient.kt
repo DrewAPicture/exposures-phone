@@ -6,6 +6,7 @@ import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
+import com.google.android.gms.wearable.Node
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +29,7 @@ class DataLayerClient(context: Context) : DataLayerGateway {
     private val dataClient = Wearable.getDataClient(appContext)
     private val messageClient = Wearable.getMessageClient(appContext)
     private val capabilityClient = Wearable.getCapabilityClient(appContext)
+    private val nodeClient = Wearable.getNodeClient(appContext)
 
     init {
         // The res/values/wear.xml manifest declaration alone can be slow to propagate through Play
@@ -91,10 +93,52 @@ class DataLayerClient(context: Context) : DataLayerGateway {
     }
 
     override suspend fun findReachableNodeId(): String? {
-        val capabilityInfo = capabilityClient
-            .getCapability(DataLayerPaths.CAPABILITY_EXPOSURES_APP, CapabilityClient.FILTER_REACHABLE)
-            .await()
-        return capabilityInfo.nodes.firstOrNull { it.isNearby }?.id ?: capabilityInfo.nodes.firstOrNull()?.id
+        val localNodeId = runCatching { nodeClient.localNode.await().id }.getOrNull()
+        val connectedRemoteNodes = runCatching { nodeClient.connectedNodes.await() }
+            .getOrElse { emptyList() }
+            .filterNot { it.id == localNodeId }
+        if (connectedRemoteNodes.isEmpty()) return null
+
+        val capabilityReachableNodeIds = getCapabilityNodeIds(CapabilityClient.FILTER_REACHABLE, localNodeId)
+        val capabilityAllNodeIds = getCapabilityNodeIds(CapabilityClient.FILTER_ALL, localNodeId)
+
+        val nearbyConnected = connectedRemoteNodes.filter { it.isNearby }
+        return pickNode(
+            preferred = nearbyConnected,
+            fallback = connectedRemoteNodes,
+            reachableCapabilityNodeIds = capabilityReachableNodeIds,
+            allCapabilityNodeIds = capabilityAllNodeIds,
+        )?.id
+    }
+
+    private suspend fun getCapabilityNodeIds(filter: Int, localNodeId: String?): Set<String> =
+        runCatching {
+            capabilityClient.getCapability(DataLayerPaths.CAPABILITY_EXPOSURES_APP, filter)
+                .await()
+                .nodes
+                .map { it.id }
+                .filterNot { it == localNodeId }
+                .toSet()
+        }.getOrElse { emptySet() }
+
+    private fun pickNode(
+        preferred: List<Node>,
+        fallback: List<Node>,
+        reachableCapabilityNodeIds: Set<String>,
+        allCapabilityNodeIds: Set<String>,
+    ): Node? {
+        val reachablePreferred = preferred.firstOrNull { it.id in reachableCapabilityNodeIds }
+        if (reachablePreferred != null) return reachablePreferred
+
+        val reachableFallback = fallback.firstOrNull { it.id in reachableCapabilityNodeIds }
+        if (reachableFallback != null) return reachableFallback
+
+        // Some device/GMS combinations intermittently return empty capability sets despite
+        // connected peers. In that case, prefer transport reachability over strict capability.
+        val allowAnyConnected = allCapabilityNodeIds.isEmpty()
+        val allPreferred = preferred.firstOrNull { allowAnyConnected || it.id in allCapabilityNodeIds }
+        if (allPreferred != null) return allPreferred
+        return fallback.firstOrNull { allowAnyConnected || it.id in allCapabilityNodeIds }
     }
 
     companion object {

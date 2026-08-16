@@ -80,6 +80,14 @@
                     android:scheme="wear"
                     android:host="*"
                     android:path="/command/complete-roll" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:path="/command/request-rolls-sync" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:path="/command/connectivity-ping" />
             </intent-filter>
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />

@@ -16,6 +16,7 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val cameraBodyCount: Int = 0,
     val lensCount: Int = 0,
+    val lightMeterCount: Int = 0,
     val filmRollCount: Int = 0,
     val exposureCount: Int = 0,
     val watchReachable: Boolean? = null, // null while unchecked
@@ -28,17 +29,25 @@ class HomeViewModel(
 
     private val _watchReachable = MutableStateFlow<Boolean?>(null)
 
-    val uiState: StateFlow<HomeUiState> = combine(
+    // combine() only has direct overloads up to 5 flows, so the equipment counts are pre-combined
+    // into one Triple to keep the outer combine within that limit.
+    private val equipmentCounts = combine(
         repository.observeCameraBodies(),
         repository.observeLenses(),
+        repository.observeLightMeters(),
+    ) { bodies, lenses, lightMeters -> Triple(bodies.size, lenses.size, lightMeters.size) }
+
+    val uiState: StateFlow<HomeUiState> = combine(
+        equipmentCounts,
         repository.observeFilmRolls(),
         repository.observeAllExposures(),
         _watchReachable,
-    ) { bodies, lenses, rolls, exposures, reachable ->
+    ) { (cameraBodyCount, lensCount, lightMeterCount), rolls, exposures, reachable ->
         HomeUiState(
             isLoading = false,
-            cameraBodyCount = bodies.size,
-            lensCount = lenses.size,
+            cameraBodyCount = cameraBodyCount,
+            lensCount = lensCount,
+            lightMeterCount = lightMeterCount,
             filmRollCount = rolls.size,
             exposureCount = exposures.size,
             watchReachable = reachable,

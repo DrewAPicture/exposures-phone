@@ -82,6 +82,14 @@ fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             }
+            DropdownField(
+                label = "Light meter (optional)",
+                value = state.availableLightMeters.firstOrNull { it.id == state.lightMeterId },
+                options = listOf(null) + state.availableLightMeters,
+                optionLabel = { it?.name ?: "None" },
+                onValueChange = { viewModel.setLightMeter(it?.id) },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
             OutlinedTextField(
                 value = state.targetFrameCount,
                 onValueChange = viewModel::setTargetFrameCount,

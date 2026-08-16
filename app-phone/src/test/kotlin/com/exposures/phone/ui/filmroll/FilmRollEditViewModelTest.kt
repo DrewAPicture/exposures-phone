@@ -2,6 +2,8 @@ package com.exposures.phone.ui.filmroll
 
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
+import com.exposures.model.LightMeter
+import com.exposures.model.LightMeterType
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.SyncStatus
 import com.exposures.phone.MainDispatcherRule
@@ -33,6 +35,15 @@ class FilmRollEditViewModelTest {
         )
         repository.saveCameraBody(body)
         return body
+    }
+
+    private suspend fun seededLightMeter(repository: EquipmentRepository): LightMeter {
+        val meter = LightMeter(
+            id = "meter-1", name = "Spotmeter V", manufacturer = "Pentax", type = LightMeterType.SPOT,
+            createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
+        )
+        repository.saveLightMeter(meter)
+        return meter
     }
 
     @Test
@@ -91,5 +102,64 @@ class FilmRollEditViewModelTest {
         assertEquals(400, saved.boxSpeedIso)
         assertEquals(10, saved.targetFrameCount)
         assertTrue(gateway.putPayloads.isNotEmpty())
+    }
+
+    @Test
+    fun `defaults to no light meter when none is selected`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertNull(state.lightMeterId)
+    }
+
+    @Test
+    fun `a roll is savable with no light meter selected`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        seededLightMeter(repository)
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("Portra 400 — Roll 1")
+        viewModel.setFilmStock("Kodak Portra 400")
+        viewModel.setBoxSpeedIso("400")
+        viewModel.setTargetFrameCount("10")
+
+        assertTrue(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `save persists the selected light meter`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val meter = seededLightMeter(repository)
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("Portra 400 — Roll 1")
+        viewModel.setFilmStock("Kodak Portra 400")
+        viewModel.setBoxSpeedIso("400")
+        viewModel.setTargetFrameCount("10")
+        viewModel.setLightMeter(meter.id)
+
+        viewModel.save()
+        viewModel.uiState.first { it.done }
+
+        assertEquals(meter.id, repository.observeFilmRolls().first().single().lightMeterId)
+    }
+
+    @Test
+    fun `setting the light meter back to null clears a previously selected one`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val meter = seededLightMeter(repository)
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setLightMeter(meter.id)
+
+        viewModel.setLightMeter(null)
+
+        assertNull(viewModel.uiState.value.lightMeterId)
     }
 }

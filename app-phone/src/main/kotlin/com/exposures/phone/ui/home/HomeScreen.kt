@@ -29,6 +29,7 @@ import com.exposures.phone.ui.appContainer
 fun HomeScreen(
     onOpenCameraBodies: () -> Unit,
     onOpenLenses: () -> Unit,
+    onOpenLightMeters: () -> Unit,
     onOpenFilmRolls: () -> Unit,
 ) {
     val container = appContainer()
@@ -68,6 +69,11 @@ fun HomeScreen(
                 headlineContent = { Text("Lenses") },
                 supportingContent = { Text("${state.lensCount} configured") },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenLenses),
+            )
+            ListItem(
+                headlineContent = { Text("Light Meters") },
+                supportingContent = { Text("${state.lightMeterCount} configured") },
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenLightMeters),
             )
             ListItem(
                 headlineContent = { Text("Film Rolls") },

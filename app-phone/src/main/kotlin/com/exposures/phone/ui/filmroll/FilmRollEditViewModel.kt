@@ -6,6 +6,7 @@ import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
+import com.exposures.model.LightMeter
 import com.exposures.model.RollStatus
 import com.exposures.model.SyncStatus
 import com.exposures.phone.sync.EquipmentSyncPusher
@@ -20,11 +21,13 @@ data class FilmRollEditUiState(
     val isLoading: Boolean = true,
     val isNew: Boolean = true,
     val availableCameraBodies: List<CameraBody> = emptyList(),
+    val availableLightMeters: List<LightMeter> = emptyList(),
     val name: String = "",
     val filmStock: String = "",
     val boxSpeedIso: String = "",
     val format: FilmFormat = FilmFormat.MEDIUM_FORMAT_120,
     val cameraBodyId: String? = null,
+    val lightMeterId: String? = null,
     val targetFrameCount: String = "",
     val done: Boolean = false,
 ) {
@@ -49,22 +52,26 @@ class FilmRollEditViewModel(
     init {
         viewModelScope.launch {
             val cameraBodies = repository.observeCameraBodies().first()
+            val lightMeters = repository.observeLightMeters().first()
             val existing = existingId?.let { repository.getFilmRoll(it) }
             _uiState.value = if (existing == null) {
                 _uiState.value.copy(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
+                    availableLightMeters = lightMeters,
                     cameraBodyId = cameraBodies.firstOrNull()?.id,
                 )
             } else {
                 _uiState.value.copy(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
+                    availableLightMeters = lightMeters,
                     name = existing.name,
                     filmStock = existing.filmStock,
                     boxSpeedIso = existing.boxSpeedIso.toString(),
                     format = existing.format,
                     cameraBodyId = existing.cameraBodyId,
+                    lightMeterId = existing.lightMeterId,
                     targetFrameCount = existing.targetFrameCount.toString(),
                 )
             }
@@ -91,6 +98,11 @@ class FilmRollEditViewModel(
         _uiState.value = _uiState.value.copy(cameraBodyId = cameraBodyId)
     }
 
+    /** Null clears the roll's light meter — most rolls don't use a handheld meter at all. */
+    fun setLightMeter(lightMeterId: String?) {
+        _uiState.value = _uiState.value.copy(lightMeterId = lightMeterId)
+    }
+
     fun setTargetFrameCount(value: String) {
         _uiState.value = _uiState.value.copy(targetFrameCount = value)
     }
@@ -108,6 +120,7 @@ class FilmRollEditViewModel(
                 boxSpeedIso = requireNotNull(state.boxSpeedIso.toIntOrNull()),
                 format = state.format,
                 cameraBodyId = requireNotNull(state.cameraBodyId),
+                lightMeterId = state.lightMeterId,
                 targetFrameCount = requireNotNull(state.targetFrameCount.toIntOrNull()),
                 status = existing?.status ?: RollStatus.AVAILABLE,
                 createdAt = existing?.createdAt ?: now,

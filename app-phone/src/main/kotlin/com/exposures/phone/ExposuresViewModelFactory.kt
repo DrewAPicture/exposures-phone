@@ -12,6 +12,8 @@ import com.exposures.phone.ui.filmroll.FilmRollListViewModel
 import com.exposures.phone.ui.home.HomeViewModel
 import com.exposures.phone.ui.lens.LensEditViewModel
 import com.exposures.phone.ui.lens.LensListViewModel
+import com.exposures.phone.ui.lightmeter.LightMeterEditViewModel
+import com.exposures.phone.ui.lightmeter.LightMeterListViewModel
 
 /** Manual ViewModel factory, matching exposures-watch's approach — see AppContainer. */
 class ExposuresViewModelFactory(
@@ -28,6 +30,8 @@ class ExposuresViewModelFactory(
         CameraBodyEditViewModel::class.java -> CameraBodyEditViewModel(repository, syncPusher, entityId)
         LensListViewModel::class.java -> LensListViewModel(repository)
         LensEditViewModel::class.java -> LensEditViewModel(repository, syncPusher, entityId)
+        LightMeterListViewModel::class.java -> LightMeterListViewModel(repository)
+        LightMeterEditViewModel::class.java -> LightMeterEditViewModel(repository, syncPusher, entityId)
         FilmRollListViewModel::class.java -> FilmRollListViewModel(repository)
         FilmRollEditViewModel::class.java -> FilmRollEditViewModel(repository, syncPusher, entityId)
         else -> error("Unknown ViewModel class: $modelClass")

@@ -60,7 +60,17 @@ class CaptureForegroundService : LifecycleService() {
             return START_NOT_STICKY
         }
 
-        startForegroundWithNotification()
+        val startedForeground = runCatching { startForegroundWithNotification() }.isSuccess
+        if (!startedForeground) {
+            // Android 14+ can reject camera-type FGS startup when the app is backgrounded and not
+            // currently eligible for while-in-use camera access. Report FAILED instead of crashing.
+            lifecycleScope.launch {
+                CaptureResultPublisher(container.repository, container.dataLayerClient)
+                    .publish(exposureId, PhotoStatus.FAILED)
+                stopSelf(startId)
+            }
+            return START_NOT_STICKY
+        }
 
         lifecycleScope.launch {
             val status = runCatching { captureAndSave(exposureId) }

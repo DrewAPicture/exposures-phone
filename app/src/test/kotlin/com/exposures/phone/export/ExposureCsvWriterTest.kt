@@ -51,7 +51,7 @@ class ExposureCsvWriterTest {
 
         val row = csv.lines()[1]
         assertEquals(
-            "Portra 400 — Roll 1,1,110mm f/2.8 W,${ShutterSpeed.fraction(125).label},f/8.0,400,,,2023-11-14 22:13,CAPTURED",
+            "Portra 400 — Roll 1,1,110mm f/2.8 W,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,,,2023-11-14 22:13,CAPTURED",
             row,
         )
     }
@@ -91,7 +91,7 @@ class ExposureCsvWriterTest {
             zoneId = ZoneOffset.UTC,
         )
 
-        val expectedRow = "Roll,1,Lens,${ShutterSpeed.fraction(125).label},f/8.0,400,," +
+        val expectedRow = "Roll,1,Lens,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,," +
             "\"backlit, metered for shadows\",2023-11-14 22:13,CAPTURED"
         assertEquals(expectedRow, csv.lines()[1])
     }

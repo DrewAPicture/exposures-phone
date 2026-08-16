@@ -45,14 +45,14 @@ fun LensEditScreen(id: String?, onDone: () -> Unit) {
             OutlinedTextField(
                 value = state.minAperture,
                 onValueChange = viewModel::setMinAperture,
-                label = { Text("Min aperture (widest, e.g. 2.8)") },
+                label = { Text("Min aperture (widest, e.g. ƒ/2.8)") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             OutlinedTextField(
                 value = state.maxAperture,
                 onValueChange = viewModel::setMaxAperture,
-                label = { Text("Max aperture (smallest, e.g. 32)") },
+                label = { Text("Max aperture (smallest, e.g. ƒ/32)") },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
@@ -67,7 +67,13 @@ fun LensEditScreen(id: String?, onDone: () -> Unit) {
             OutlinedTextField(
                 value = state.referencePhotoZoomRatio,
                 onValueChange = viewModel::setReferencePhotoZoomRatio,
-                label = { Text("Reference photo zoom (e.g. 1.0, 3.0)") },
+                label = { Text("Reference photo zoom") },
+                supportingText = {
+                    Text(
+                        "How far to zoom the phone's camera for this lens's reference photo — " +
+                            "1.0 = no zoom, higher for longer lenses, lower for wider ones.",
+                    )
+                },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )

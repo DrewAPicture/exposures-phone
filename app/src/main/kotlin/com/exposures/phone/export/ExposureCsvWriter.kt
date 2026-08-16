@@ -32,7 +32,7 @@ object ExposureCsvWriter {
                 exposure.frameNumber.toString(),
                 lensNames[exposure.lensId] ?: exposure.lensId,
                 exposure.shutterSpeed.label,
-                "f/${exposure.aperture}",
+                "ƒ/${exposure.aperture}",
                 exposure.isoUsed.toString(),
                 exposure.zone?.let(Zone::label).orEmpty(),
                 exposure.notes.orEmpty(),

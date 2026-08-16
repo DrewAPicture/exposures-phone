@@ -38,7 +38,7 @@ fun LensListScreen(onAdd: () -> Unit, onEdit: (String) -> Unit) {
             items(state.lenses) { lens: Lens ->
                 ListItem(
                     headlineContent = { Text(lens.name) },
-                    supportingContent = { Text("f/${lens.minAperture}–f/${lens.maxAperture}") },
+                    supportingContent = { Text("ƒ/${lens.minAperture}–ƒ/${lens.maxAperture}") },
                     modifier = Modifier.fillMaxWidth().clickable { onEdit(lens.id) },
                 )
             }

@@ -4,27 +4,27 @@ import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerGateway
 import com.exposures.datalayer.DataLayerJson
 import com.exposures.datalayer.DataLayerPaths
-import com.exposures.datalayer.dto.CapturePhotoCommand
 import com.exposures.datalayer.dto.CaptureResultCommand
 import com.exposures.datalayer.mapper.toPhotoStatusDto
 import com.exposures.model.PhotoStatus
 import kotlinx.coroutines.flow.first
 
 /**
- * Handles the watch's capture-photo command. Phase 2 stub: there's no camera capture yet, so this
- * immediately marks the exposure CAPTURED — Phase 3 replaces the body of [handle] with a real
- * CameraX capture before acking, without changing the surrounding contract (update mirror, push
- * photo-status, ack the watch).
+ * Publishes the outcome of a capture attempt: updates the local exposure mirror, pushes the
+ * updated photo-status payload (durable fallback), and acks the watch (fast path when reachable).
+ * Called by [com.exposures.phone.CaptureForegroundService] after a real CameraX capture succeeds
+ * or fails — this class has no camera code in it, just the result-plumbing that's identical
+ * either way, which is what makes it worth unit testing on its own.
  */
-class CaptureCommandHandler(
+class CaptureResultPublisher(
     private val repository: EquipmentRepository,
     private val gateway: DataLayerGateway,
 ) {
-    suspend fun handle(command: CapturePhotoCommand) {
-        repository.updateExposurePhotoStatus(command.exposureId, PhotoStatus.CAPTURED)
+    suspend fun publish(exposureId: String, status: PhotoStatus) {
+        repository.updateExposurePhotoStatus(exposureId, status)
         pushPhotoStatuses()
 
-        val result = CaptureResultCommand(exposureId = command.exposureId, status = PhotoStatus.CAPTURED.name)
+        val result = CaptureResultCommand(exposureId = exposureId, status = status.name)
         gateway.sendMessage(DataLayerPaths.CAPTURE_RESULT_COMMAND, DataLayerJson.encodeCaptureResultCommand(result))
     }
 

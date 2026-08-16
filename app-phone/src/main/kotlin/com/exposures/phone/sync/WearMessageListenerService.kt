@@ -1,8 +1,10 @@
 package com.exposures.phone.sync
 
+import android.content.Intent
 import com.exposures.datalayer.DataLayerJson
 import com.exposures.datalayer.DataLayerPaths
 import com.exposures.phone.ExposuresApplication
+import com.exposures.phone.capture.CaptureForegroundService
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
@@ -16,9 +18,10 @@ import kotlinx.coroutines.launch
 
 /**
  * Manifest-registered (see AndroidManifest.xml) so the system can start this even when the app
- * isn't running. Delegates immediately to [CaptureCommandHandler]/[ExposureSyncReceiver] — those
- * hold the actual logic and are unit tested; this class is just the GMS entry point wiring, which
- * can't be meaningfully tested outside a real device/emulator pair.
+ * isn't running. Delegates immediately to [CaptureForegroundService]/[RollCompletionHandler]/
+ * [ExposureSyncReceiver] — those hold the actual logic and (where they can be) are unit tested;
+ * this class is just the GMS entry point wiring, which can't be meaningfully tested outside a
+ * real device/emulator pair.
  */
 class WearMessageListenerService : WearableListenerService() {
 
@@ -27,10 +30,23 @@ class WearMessageListenerService : WearableListenerService() {
     private val container get() = (application as ExposuresApplication).container
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path != DataLayerPaths.CAPTURE_PHOTO_COMMAND) return
+        when (messageEvent.path) {
+            DataLayerPaths.CAPTURE_PHOTO_COMMAND -> handleCapturePhoto(messageEvent)
+            DataLayerPaths.COMPLETE_ROLL_COMMAND -> handleCompleteRoll(messageEvent)
+        }
+    }
+
+    private fun handleCapturePhoto(messageEvent: MessageEvent) {
         val command = DataLayerJson.decodeCapturePhotoCommand(String(messageEvent.data))
+        val intent = Intent(this, CaptureForegroundService::class.java)
+            .putExtra(CaptureForegroundService.EXTRA_EXPOSURE_ID, command.exposureId)
+        startForegroundService(intent)
+    }
+
+    private fun handleCompleteRoll(messageEvent: MessageEvent) {
+        val command = DataLayerJson.decodeCompleteRollCommand(String(messageEvent.data))
         serviceScope.launch {
-            CaptureCommandHandler(container.repository, container.dataLayerClient).handle(command)
+            RollCompletionHandler(container.repository, container.syncPusher).handle(command.rollId)
         }
     }
 

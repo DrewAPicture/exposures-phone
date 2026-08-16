@@ -1,5 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
+
     <application
         android:name=".ExposuresApplication"
         android:allowBackup="true"
@@ -18,9 +27,19 @@
         </activity>
 
         <!--
+          No Preview/Activity UI — see CaptureForegroundService's doc comment. foregroundServiceType
+          is required from Android 14 alongside the FOREGROUND_SERVICE_CAMERA permission above.
+        -->
+        <service
+            android:name=".capture.CaptureForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
+
+        <!--
           Manifest-registered so the system can wake this up even when the app isn't running:
-          MESSAGE_RECEIVED for the watch's capture-photo command, DATA_CHANGED so a fresh exposure
-          sync from the watch is picked up in the background, not only while the app is foregrounded.
+          MESSAGE_RECEIVED for the watch's capture-photo/complete-roll commands, DATA_CHANGED so a
+          fresh exposure sync from the watch is picked up in the background, not only while the
+          app is foregrounded.
         -->
         <service
             android:name=".sync.WearMessageListenerService"
@@ -31,6 +50,10 @@
                     android:scheme="wear"
                     android:host="*"
                     android:path="/command/capture-photo" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:path="/command/complete-roll" />
             </intent-filter>
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />

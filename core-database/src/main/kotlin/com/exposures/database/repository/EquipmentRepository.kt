@@ -8,6 +8,7 @@ import com.exposures.model.Exposure
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
 import com.exposures.model.PhotoStatus
+import com.exposures.model.ReferencePhoto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -51,6 +52,8 @@ class EquipmentRepository(private val database: ExposuresDatabase) {
     fun observeAllExposures(): Flow<List<Exposure>> =
         database.exposureDao().getAll().map { entities -> entities.map { it.toDomain() } }
 
+    suspend fun getExposure(id: String): Exposure? = database.exposureDao().getById(id)?.toDomain()
+
     /**
      * Merges a fresh exposure list from the watch into the local mirror. The watch is
      * authoritative for everything about an exposure *except* [Exposure.referencePhotoStatus] —
@@ -67,8 +70,13 @@ class EquipmentRepository(private val database: ExposuresDatabase) {
         database.exposureDao().replaceAll(merged.map { it.toEntity() })
     }
 
-    /** Phone-local update after a (currently stubbed) capture — does not touch any other field. */
+    /** Phone-local update after a capture attempt — does not touch any other field. */
     suspend fun updateExposurePhotoStatus(exposureId: String, status: PhotoStatus) {
         database.exposureDao().updatePhotoStatus(exposureId, status, System.currentTimeMillis())
     }
+
+    suspend fun saveReferencePhoto(photo: ReferencePhoto) = database.referencePhotoDao().save(photo.toEntity())
+
+    suspend fun getReferencePhoto(exposureId: String): ReferencePhoto? =
+        database.referencePhotoDao().getByExposureId(exposureId)?.toDomain()
 }

@@ -10,6 +10,7 @@ import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
 import com.exposures.model.PhotoStatus
+import com.exposures.model.ReferencePhoto
 import com.exposures.model.RollStatus
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.StopIncrement
@@ -64,6 +65,7 @@ class EquipmentRepositoryTest {
         minAperture = 2.8,
         maxAperture = 32.0,
         stopIncrement = StopIncrement.HALF_STOP,
+        referencePhotoZoomRatio = 1.0,
         createdAt = 0L,
         updatedAt = 0L,
         syncStatus = SyncStatus.PENDING_SYNC,
@@ -210,5 +212,62 @@ class EquipmentRepositoryTest {
         val exposures = repository.observeExposures("roll-1").first().associateBy { it.id }
         assertEquals(PhotoStatus.CAPTURED, exposures.getValue(a.id).referencePhotoStatus)
         assertEquals(PhotoStatus.NONE, exposures.getValue(b.id).referencePhotoStatus)
+    }
+
+    @Test
+    fun `getExposure returns a synced exposure by id`() = runTest {
+        val exposure = exposure("roll-1", 1)
+        repository.mergeExposureSync(listOf(exposure))
+
+        assertEquals(exposure, repository.getExposure(exposure.id))
+    }
+
+    @Test
+    fun `getExposure returns null for an unknown id`() = runTest {
+        assertNull(repository.getExposure("does-not-exist"))
+    }
+
+    @Test
+    fun `reference photo round-trips by exposure id`() = runTest {
+        val photo = ReferencePhoto(
+            id = UUID.randomUUID().toString(),
+            exposureId = "exp-1",
+            localUri = "file:///photo.jpg",
+            remoteUrl = null,
+            latitude = 47.6,
+            longitude = -122.3,
+            capturedAt = 1000L,
+            uploadStatus = SyncStatus.PENDING_SYNC,
+            retryCount = 0,
+            lastError = null,
+        )
+
+        repository.saveReferencePhoto(photo)
+
+        assertEquals(photo, repository.getReferencePhoto("exp-1"))
+    }
+
+    @Test
+    fun `saving a new reference photo for the same exposure replaces the earlier attempt`() = runTest {
+        val firstAttempt = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-1", localUri = null, remoteUrl = null,
+            latitude = null, longitude = null, capturedAt = null, uploadStatus = SyncStatus.SYNC_FAILED,
+            retryCount = 1, lastError = "camera busy",
+        )
+        repository.saveReferencePhoto(firstAttempt)
+
+        val retry = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-1", localUri = "file:///retry.jpg",
+            remoteUrl = null, latitude = null, longitude = null, capturedAt = 2000L,
+            uploadStatus = SyncStatus.PENDING_SYNC, retryCount = 0, lastError = null,
+        )
+        repository.saveReferencePhoto(retry)
+
+        assertEquals(retry, repository.getReferencePhoto("exp-1"))
+    }
+
+    @Test
+    fun `getReferencePhoto returns null when none has been captured`() = runTest {
+        assertNull(repository.getReferencePhoto("exp-without-a-photo"))
     }
 }

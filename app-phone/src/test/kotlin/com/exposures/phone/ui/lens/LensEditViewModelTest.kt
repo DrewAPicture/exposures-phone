@@ -67,4 +67,77 @@ class LensEditViewModelTest {
         assertEquals(StopIncrement.THIRD_STOP, saved.stopIncrement)
         assertTrue(gateway.putPayloads.isNotEmpty())
     }
+
+    @Test
+    fun `defaults to a 1x reference photo zoom for a new lens`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals("1.0", state.referencePhotoZoomRatio)
+    }
+
+    @Test
+    fun `cannot save with a non-numeric reference photo zoom`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("180mm f/4.5 W")
+        viewModel.setMinAperture("4.5")
+        viewModel.setMaxAperture("32")
+
+        viewModel.setReferencePhotoZoomRatio("not a number")
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `cannot save with a zero or negative reference photo zoom`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("180mm f/4.5 W")
+        viewModel.setMinAperture("4.5")
+        viewModel.setMaxAperture("32")
+
+        viewModel.setReferencePhotoZoomRatio("0")
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `save persists the reference photo zoom ratio`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("180mm f/4.5 W")
+        viewModel.setMinAperture("4.5")
+        viewModel.setMaxAperture("32")
+        viewModel.setReferencePhotoZoomRatio("3.0")
+
+        viewModel.save()
+        viewModel.uiState.first { it.done }
+
+        assertEquals(3.0, repository.observeLenses().first().single().referencePhotoZoomRatio, 0.0)
+    }
+
+    @Test
+    fun `editing an existing lens loads its current zoom ratio`() = runTest {
+        val repository = createTestRepository()
+        val gateway = FakeDataLayerGateway()
+        val createViewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        createViewModel.uiState.first { !it.isLoading }
+        createViewModel.setName("180mm f/4.5 W")
+        createViewModel.setMinAperture("4.5")
+        createViewModel.setMaxAperture("32")
+        createViewModel.setReferencePhotoZoomRatio("3.0")
+        createViewModel.save()
+        val savedId = createViewModel.uiState.first { it.done }.let { repository.observeLenses().first().single().id }
+
+        val editViewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, gateway), savedId)
+
+        val state = editViewModel.uiState.first { !it.isLoading }
+        assertEquals("3.0", state.referencePhotoZoomRatio)
+    }
 }

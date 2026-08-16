@@ -12,6 +12,7 @@ data class LensEntity(
     val minAperture: Double,
     val maxAperture: Double,
     val stopIncrement: StopIncrement,
+    val referencePhotoZoomRatio: Double,
     val createdAt: Long,
     val updatedAt: Long,
     val syncStatus: SyncStatus,

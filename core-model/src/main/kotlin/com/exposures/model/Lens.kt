@@ -7,6 +7,8 @@ data class Lens(
     val minAperture: Double,
     val maxAperture: Double,
     val stopIncrement: StopIncrement,
+    /** Phone camera zoom applied to this lens's reference photo (e.g. 50mm -> 1.0, 180mm -> 3.0). */
+    val referencePhotoZoomRatio: Double,
     val createdAt: Long,
     val updatedAt: Long,
     val syncStatus: SyncStatus,

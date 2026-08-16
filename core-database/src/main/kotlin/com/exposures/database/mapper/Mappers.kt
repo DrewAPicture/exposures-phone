@@ -4,10 +4,12 @@ import com.exposures.database.entity.CameraBodyEntity
 import com.exposures.database.entity.ExposureEntity
 import com.exposures.database.entity.FilmRollEntity
 import com.exposures.database.entity.LensEntity
+import com.exposures.database.entity.ReferencePhotoEntity
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
+import com.exposures.model.ReferencePhoto
 
 fun CameraBodyEntity.toDomain() = CameraBody(
     id = id,
@@ -39,6 +41,7 @@ fun LensEntity.toDomain() = Lens(
     minAperture = minAperture,
     maxAperture = maxAperture,
     stopIncrement = stopIncrement,
+    referencePhotoZoomRatio = referencePhotoZoomRatio,
     createdAt = createdAt,
     updatedAt = updatedAt,
     syncStatus = syncStatus,
@@ -51,6 +54,7 @@ fun Lens.toEntity() = LensEntity(
     minAperture = minAperture,
     maxAperture = maxAperture,
     stopIncrement = stopIncrement,
+    referencePhotoZoomRatio = referencePhotoZoomRatio,
     createdAt = createdAt,
     updatedAt = updatedAt,
     syncStatus = syncStatus,
@@ -119,4 +123,30 @@ fun Exposure.toEntity() = ExposureEntity(
     updatedAt = updatedAt,
     syncStatus = syncStatus,
     remoteId = remoteId,
+)
+
+fun ReferencePhotoEntity.toDomain() = ReferencePhoto(
+    id = id,
+    exposureId = exposureId,
+    localUri = localUri,
+    remoteUrl = remoteUrl,
+    latitude = latitude,
+    longitude = longitude,
+    capturedAt = capturedAt,
+    uploadStatus = uploadStatus,
+    retryCount = retryCount,
+    lastError = lastError,
+)
+
+fun ReferencePhoto.toEntity() = ReferencePhotoEntity(
+    id = id,
+    exposureId = exposureId,
+    localUri = localUri,
+    remoteUrl = remoteUrl,
+    latitude = latitude,
+    longitude = longitude,
+    capturedAt = capturedAt,
+    uploadStatus = uploadStatus,
+    retryCount = retryCount,
+    lastError = lastError,
 )

@@ -42,6 +42,7 @@ class DtoMappersTest {
             minAperture = 2.8,
             maxAperture = 32.0,
             stopIncrement = StopIncrement.HALF_STOP,
+            referencePhotoZoomRatio = 3.0,
             createdAt = 1L,
             updatedAt = 2L,
             syncStatus = SyncStatus.SYNCED,

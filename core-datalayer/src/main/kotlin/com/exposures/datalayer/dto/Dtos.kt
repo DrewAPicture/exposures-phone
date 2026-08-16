@@ -28,6 +28,7 @@ data class LensDto(
     val minAperture: Double,
     val maxAperture: Double,
     val stopIncrement: String,
+    val referencePhotoZoomRatio: Double,
     val createdAt: Long,
     val updatedAt: Long,
     val remoteId: String? = null,
@@ -83,4 +84,9 @@ data class CapturePhotoCommand(
 data class CaptureResultCommand(
     val exposureId: String,
     val status: String,
+)
+
+@Serializable
+data class CompleteRollCommand(
+    val rollId: String,
 )

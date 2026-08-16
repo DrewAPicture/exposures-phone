@@ -20,16 +20,19 @@ data class LensEditUiState(
     val minAperture: String = "",
     val maxAperture: String = "",
     val stopIncrement: StopIncrement = StopIncrement.HALF_STOP,
+    val referencePhotoZoomRatio: String = "1.0",
     val done: Boolean = false,
 ) {
     private val minApertureValue get() = minAperture.toDoubleOrNull()
     private val maxApertureValue get() = maxAperture.toDoubleOrNull()
+    private val zoomRatioValue get() = referencePhotoZoomRatio.toDoubleOrNull()
 
     val canSave: Boolean
         get() {
             val min = minApertureValue
             val max = maxApertureValue
-            return name.isNotBlank() && min != null && min > 0.0 && max != null && max >= min
+            val zoom = zoomRatioValue
+            return name.isNotBlank() && min != null && min > 0.0 && max != null && max >= min && zoom != null && zoom > 0.0
         }
 }
 
@@ -58,6 +61,7 @@ class LensEditViewModel(
                         minAperture = lens.minAperture.toString(),
                         maxAperture = lens.maxAperture.toString(),
                         stopIncrement = lens.stopIncrement,
+                        referencePhotoZoomRatio = lens.referencePhotoZoomRatio.toString(),
                     )
                 }
             }
@@ -80,6 +84,10 @@ class LensEditViewModel(
         _uiState.value = _uiState.value.copy(stopIncrement = value)
     }
 
+    fun setReferencePhotoZoomRatio(value: String) {
+        _uiState.value = _uiState.value.copy(referencePhotoZoomRatio = value)
+    }
+
     fun save() {
         val state = _uiState.value
         if (!state.canSave) return
@@ -92,6 +100,7 @@ class LensEditViewModel(
                 minAperture = requireNotNull(state.minAperture.toDoubleOrNull()),
                 maxAperture = requireNotNull(state.maxAperture.toDoubleOrNull()),
                 stopIncrement = state.stopIncrement,
+                referencePhotoZoomRatio = requireNotNull(state.referencePhotoZoomRatio.toDoubleOrNull()),
                 createdAt = existing?.createdAt ?: now,
                 updatedAt = now,
                 syncStatus = SyncStatus.PENDING_SYNC,

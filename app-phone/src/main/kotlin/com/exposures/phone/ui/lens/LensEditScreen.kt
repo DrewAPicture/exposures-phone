@@ -64,6 +64,13 @@ fun LensEditScreen(id: String?, onDone: () -> Unit) {
                 onValueChange = viewModel::setStopIncrement,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
+            OutlinedTextField(
+                value = state.referencePhotoZoomRatio,
+                onValueChange = viewModel::setReferencePhotoZoomRatio,
+                label = { Text("Reference photo zoom (e.g. 1.0, 3.0)") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
             Button(
                 onClick = viewModel::save,
                 enabled = state.canSave,

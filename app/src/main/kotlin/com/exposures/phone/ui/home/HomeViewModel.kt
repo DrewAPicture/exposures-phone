@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerGateway
+import com.exposures.phone.export.CsvExportCoordinator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ data class HomeUiState(
 class HomeViewModel(
     private val repository: EquipmentRepository,
     private val gateway: DataLayerGateway,
+    private val csvExportCoordinator: CsvExportCoordinator,
     private val triggerUpload: () -> Unit = {},
 ) : ViewModel() {
 
@@ -74,4 +76,6 @@ class HomeViewModel(
     }
 
     fun syncNow() = triggerUpload()
+
+    suspend fun exportAllCsv(): String = csvExportCoordinator.exportAll()
 }

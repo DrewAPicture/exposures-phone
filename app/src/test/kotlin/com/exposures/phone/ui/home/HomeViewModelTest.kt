@@ -6,6 +6,7 @@ import com.exposures.model.ShutterSpeed
 import com.exposures.model.SyncStatus
 import com.exposures.phone.MainDispatcherRule
 import com.exposures.phone.createTestRepository
+import com.exposures.phone.export.CsvExportCoordinator
 import com.exposures.phone.sync.FakeDataLayerGateway
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -25,8 +26,9 @@ class HomeViewModelTest {
 
     @Test
     fun `reports the watch as reachable when the gateway finds a node`() = runTest {
+        val repository = createTestRepository()
         val gateway = FakeDataLayerGateway().apply { reachableNodeId = "watch-node" }
-        val viewModel = HomeViewModel(createTestRepository(), gateway)
+        val viewModel = HomeViewModel(repository, gateway, CsvExportCoordinator(repository))
 
         val state = viewModel.uiState.first { it.watchReachable != null }
 
@@ -35,8 +37,9 @@ class HomeViewModelTest {
 
     @Test
     fun `reports the watch as unreachable when the gateway finds no node`() = runTest {
+        val repository = createTestRepository()
         val gateway = FakeDataLayerGateway().apply { reachableNodeId = null }
-        val viewModel = HomeViewModel(createTestRepository(), gateway)
+        val viewModel = HomeViewModel(repository, gateway, CsvExportCoordinator(repository))
 
         val state = viewModel.uiState.first { it.watchReachable != null }
 
@@ -45,8 +48,9 @@ class HomeViewModelTest {
 
     @Test
     fun `refreshPairingStatus re-checks reachability`() = runTest {
+        val repository = createTestRepository()
         val gateway = FakeDataLayerGateway().apply { reachableNodeId = null }
-        val viewModel = HomeViewModel(createTestRepository(), gateway)
+        val viewModel = HomeViewModel(repository, gateway, CsvExportCoordinator(repository))
         viewModel.uiState.first { it.watchReachable != null }
 
         gateway.reachableNodeId = "watch-node"
@@ -69,7 +73,7 @@ class HomeViewModelTest {
         repository.mergeExposureSync(
             listOf(exposure("exp-1", SyncStatus.PENDING_SYNC), exposure("exp-2", SyncStatus.SYNCED)),
         )
-        val viewModel = HomeViewModel(repository, FakeDataLayerGateway())
+        val viewModel = HomeViewModel(repository, FakeDataLayerGateway(), CsvExportCoordinator(repository))
 
         val state = viewModel.uiState.first { !it.isLoading }
 
@@ -79,10 +83,23 @@ class HomeViewModelTest {
     @Test
     fun `syncNow invokes the injected upload trigger`() = runTest {
         var triggered = false
-        val viewModel = HomeViewModel(createTestRepository(), FakeDataLayerGateway(), triggerUpload = { triggered = true })
+        val repository = createTestRepository()
+        val viewModel = HomeViewModel(
+            repository, FakeDataLayerGateway(), CsvExportCoordinator(repository), triggerUpload = { triggered = true },
+        )
 
         viewModel.syncNow()
 
         assertTrue(triggered)
+    }
+
+    @Test
+    fun `exportAllCsv delegates to the csv export coordinator`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = HomeViewModel(repository, FakeDataLayerGateway(), CsvExportCoordinator(repository))
+
+        val csv = viewModel.exportAllCsv()
+
+        assertTrue(csv.startsWith("Roll,Frame,Lens,Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status"))
     }
 }

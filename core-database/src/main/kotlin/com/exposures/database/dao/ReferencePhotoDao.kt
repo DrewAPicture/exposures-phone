@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.exposures.database.entity.ReferencePhotoEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReferencePhotoDao {
@@ -15,4 +16,7 @@ interface ReferencePhotoDao {
 
     @Query("SELECT * FROM reference_photos WHERE exposureId = :exposureId")
     suspend fun getByExposureId(exposureId: String): ReferencePhotoEntity?
+
+    @Query("SELECT * FROM reference_photos")
+    fun getAll(): Flow<List<ReferencePhotoEntity>>
 }

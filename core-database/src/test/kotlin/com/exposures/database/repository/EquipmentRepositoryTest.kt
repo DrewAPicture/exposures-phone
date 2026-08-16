@@ -308,4 +308,99 @@ class EquipmentRepositoryTest {
     fun `getReferencePhoto returns null when none has been captured`() = runTest {
         assertNull(repository.getReferencePhoto("exp-without-a-photo"))
     }
+
+    @Test
+    fun `getDirtyExposures excludes exposures already synced to the backend`() = runTest {
+        val dirty = exposure("roll-1", 1).copy(syncStatus = SyncStatus.PENDING_SYNC)
+        val synced = exposure("roll-1", 2).copy(syncStatus = SyncStatus.SYNCED)
+        repository.mergeExposureSync(listOf(dirty, synced))
+
+        val dirtyExposures = repository.getDirtyExposures()
+
+        assertEquals(listOf(dirty.id), dirtyExposures.map { it.id })
+    }
+
+    @Test
+    fun `markExposureSynced records the remote id and SYNCED status`() = runTest {
+        val original = exposure("roll-1", 1).copy(syncStatus = SyncStatus.PENDING_SYNC)
+        repository.mergeExposureSync(listOf(original))
+
+        repository.markExposureSynced(original, remoteId = "server-1")
+
+        val updated = repository.getExposure(original.id)!!
+        assertEquals(SyncStatus.SYNCED, updated.syncStatus)
+        assertEquals("server-1", updated.remoteId)
+    }
+
+    @Test
+    fun `markExposureSyncFailed records SYNC_FAILED without a remote id`() = runTest {
+        val original = exposure("roll-1", 1).copy(syncStatus = SyncStatus.PENDING_SYNC)
+        repository.mergeExposureSync(listOf(original))
+
+        repository.markExposureSyncFailed(original)
+
+        val updated = repository.getExposure(original.id)!!
+        assertEquals(SyncStatus.SYNC_FAILED, updated.syncStatus)
+        assertNull(updated.remoteId)
+    }
+
+    @Test
+    fun `getDirtyReferencePhotos excludes photos already synced and photos with no local file`() = runTest {
+        val synced = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-synced", localUri = "file:///synced.jpg",
+            remoteUrl = "https://cdn.example/synced.jpg", latitude = null, longitude = null, capturedAt = 1L,
+            uploadStatus = SyncStatus.SYNCED, retryCount = 0, lastError = null,
+        )
+        val pending = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-pending", localUri = "file:///pending.jpg",
+            remoteUrl = null, latitude = null, longitude = null, capturedAt = 2L,
+            uploadStatus = SyncStatus.PENDING_SYNC, retryCount = 0, lastError = null,
+        )
+        val captureFailed = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-capture-failed", localUri = null,
+            remoteUrl = null, latitude = null, longitude = null, capturedAt = null,
+            uploadStatus = SyncStatus.SYNC_FAILED, retryCount = 0, lastError = "camera busy",
+        )
+        repository.saveReferencePhoto(synced)
+        repository.saveReferencePhoto(pending)
+        repository.saveReferencePhoto(captureFailed)
+
+        val dirty = repository.getDirtyReferencePhotos()
+
+        assertEquals(listOf("exp-pending"), dirty.map { it.exposureId })
+    }
+
+    @Test
+    fun `markReferencePhotoSynced records the remote url and clears any previous error`() = runTest {
+        val photo = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-1", localUri = "file:///photo.jpg",
+            remoteUrl = null, latitude = null, longitude = null, capturedAt = 1L,
+            uploadStatus = SyncStatus.SYNC_FAILED, retryCount = 1, lastError = "timed out",
+        )
+        repository.saveReferencePhoto(photo)
+
+        repository.markReferencePhotoSynced(photo, remoteUrl = "https://cdn.example/photo.jpg")
+
+        val updated = repository.getReferencePhoto("exp-1")!!
+        assertEquals(SyncStatus.SYNCED, updated.uploadStatus)
+        assertEquals("https://cdn.example/photo.jpg", updated.remoteUrl)
+        assertNull(updated.lastError)
+    }
+
+    @Test
+    fun `markReferencePhotoSyncFailed increments the retry count and records the error`() = runTest {
+        val photo = ReferencePhoto(
+            id = UUID.randomUUID().toString(), exposureId = "exp-1", localUri = "file:///photo.jpg",
+            remoteUrl = null, latitude = null, longitude = null, capturedAt = 1L,
+            uploadStatus = SyncStatus.PENDING_SYNC, retryCount = 0, lastError = null,
+        )
+        repository.saveReferencePhoto(photo)
+
+        repository.markReferencePhotoSyncFailed(photo, error = "connection reset")
+
+        val updated = repository.getReferencePhoto("exp-1")!!
+        assertEquals(SyncStatus.SYNC_FAILED, updated.uploadStatus)
+        assertEquals(1, updated.retryCount)
+        assertEquals("connection reset", updated.lastError)
+    }
 }

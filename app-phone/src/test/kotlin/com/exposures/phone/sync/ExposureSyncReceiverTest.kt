@@ -23,7 +23,7 @@ class ExposureSyncReceiverTest {
     )
 
     @Test
-    fun `handlePayload decodes and merges exposures into the local mirror as synced`() = runTest {
+    fun `handlePayload decodes and merges a never-before-seen exposure as pending backend sync`() = runTest {
         val repository = createTestRepository()
         val receiver = ExposureSyncReceiver(repository)
         val json = DataLayerJson.encodeExposures(listOf(exposureDto("exp-1")))
@@ -32,7 +32,9 @@ class ExposureSyncReceiverTest {
 
         val stored = repository.observeExposures("roll-1").first().single()
         assertEquals("exp-1", stored.id)
-        assertEquals(SyncStatus.SYNCED, stored.syncStatus)
+        // PENDING_SYNC here is about the remote backend, not the watch<->phone Data Layer sync
+        // that just delivered this payload — that part is already done by the time this runs.
+        assertEquals(SyncStatus.PENDING_SYNC, stored.syncStatus)
         assertEquals(PhotoStatus.NONE, stored.referencePhotoStatus)
     }
 
@@ -46,5 +48,21 @@ class ExposureSyncReceiverTest {
         receiver.handlePayload(DataLayerJson.encodeExposures(listOf(exposureDto("exp-1"))))
 
         assertEquals(PhotoStatus.CAPTURED, repository.observeExposures("roll-1").first().single().referencePhotoStatus)
+    }
+
+    @Test
+    fun `a second payload preserves a locally-known backend sync status and remote id`() = runTest {
+        val repository = createTestRepository()
+        val receiver = ExposureSyncReceiver(repository)
+        receiver.handlePayload(DataLayerJson.encodeExposures(listOf(exposureDto("exp-1"))))
+        val uploaded = repository.getExposure("exp-1")!!
+        repository.markExposureSynced(uploaded, remoteId = "server-exp-1")
+
+        // The watch re-syncs (e.g. after logging another frame) — this must not undo the upload.
+        receiver.handlePayload(DataLayerJson.encodeExposures(listOf(exposureDto("exp-1"))))
+
+        val stored = repository.getExposure("exp-1")!!
+        assertEquals(SyncStatus.SYNCED, stored.syncStatus)
+        assertEquals("server-exp-1", stored.remoteId)
     }
 }

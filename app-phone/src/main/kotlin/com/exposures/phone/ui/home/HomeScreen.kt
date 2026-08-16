@@ -57,6 +57,8 @@ fun HomeScreen(
                 }
             }
 
+            PermissionsCard()
+
             ListItem(
                 headlineContent = { Text("Camera Bodies") },
                 supportingContent = { Text("${state.cameraBodyCount} configured") },

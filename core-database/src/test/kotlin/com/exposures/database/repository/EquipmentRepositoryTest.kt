@@ -156,24 +156,59 @@ class EquipmentRepositoryTest {
     }
 
     @Test
-    fun `applyExposureSync replaces the entire exposure mirror`() = runTest {
+    fun `mergeExposureSync replaces the entire exposure mirror`() = runTest {
         val rollId = "roll-1"
-        repository.applyExposureSync(listOf(exposure(rollId, 1), exposure(rollId, 2)))
+        repository.mergeExposureSync(listOf(exposure(rollId, 1), exposure(rollId, 2)))
 
         // A second sync from the watch (e.g. after the watch's own state changed) should fully
         // replace the mirror, not merge with what's already there.
-        repository.applyExposureSync(listOf(exposure(rollId, 1)))
+        repository.mergeExposureSync(listOf(exposure(rollId, 1)))
 
         val exposures = repository.observeExposures(rollId).first()
         assertEquals(1, exposures.size)
     }
 
     @Test
-    fun `applyExposureSync with an empty list clears the mirror`() = runTest {
-        repository.applyExposureSync(listOf(exposure("roll-1", 1)))
+    fun `mergeExposureSync with an empty list clears the mirror`() = runTest {
+        repository.mergeExposureSync(listOf(exposure("roll-1", 1)))
 
-        repository.applyExposureSync(emptyList())
+        repository.mergeExposureSync(emptyList())
 
         assertTrue(repository.observeAllExposures().first().isEmpty())
+    }
+
+    @Test
+    fun `mergeExposureSync preserves a locally-known photo status over a stale incoming one`() = runTest {
+        val original = exposure("roll-1", 1)
+        repository.mergeExposureSync(listOf(original))
+        repository.updateExposurePhotoStatus(original.id, PhotoStatus.CAPTURED)
+
+        // The watch hasn't caught up yet and re-syncs with the old NONE status for this exposure.
+        repository.mergeExposureSync(listOf(original.copy(referencePhotoStatus = PhotoStatus.NONE)))
+
+        val merged = repository.observeExposures("roll-1").first().single()
+        assertEquals(PhotoStatus.CAPTURED, merged.referencePhotoStatus)
+    }
+
+    @Test
+    fun `mergeExposureSync takes the incoming status for an exposure the phone has never seen`() = runTest {
+        val brandNew = exposure("roll-1", 1).copy(referencePhotoStatus = PhotoStatus.NONE)
+
+        repository.mergeExposureSync(listOf(brandNew))
+
+        assertEquals(PhotoStatus.NONE, repository.observeExposures("roll-1").first().single().referencePhotoStatus)
+    }
+
+    @Test
+    fun `updateExposurePhotoStatus only touches the targeted exposure`() = runTest {
+        val a = exposure("roll-1", 1)
+        val b = exposure("roll-1", 2)
+        repository.mergeExposureSync(listOf(a, b))
+
+        repository.updateExposurePhotoStatus(a.id, PhotoStatus.CAPTURED)
+
+        val exposures = repository.observeExposures("roll-1").first().associateBy { it.id }
+        assertEquals(PhotoStatus.CAPTURED, exposures.getValue(a.id).referencePhotoStatus)
+        assertEquals(PhotoStatus.NONE, exposures.getValue(b.id).referencePhotoStatus)
     }
 }

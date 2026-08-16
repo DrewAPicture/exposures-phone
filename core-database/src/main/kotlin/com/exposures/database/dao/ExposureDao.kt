@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.exposures.database.entity.ExposureEntity
+import com.exposures.model.PhotoStatus
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -35,4 +36,7 @@ interface ExposureDao {
 
     @Query("SELECT * FROM exposures WHERE id = :id")
     suspend fun getById(id: String): ExposureEntity?
+
+    @Query("UPDATE exposures SET referencePhotoStatus = :status, updatedAt = :updatedAt WHERE id = :exposureId")
+    suspend fun updatePhotoStatus(exposureId: String, status: PhotoStatus, updatedAt: Long)
 }

@@ -28,6 +28,7 @@ import com.exposures.phone.ExposuresApplication
 import com.exposures.phone.MainActivity
 import com.exposures.phone.sync.CaptureResultPublisher
 import com.exposures.phone.sync.UploadScheduler
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.File
@@ -83,7 +84,7 @@ class CaptureForegroundService : LifecycleService() {
     }
 
     private suspend fun captureAndSave(exposureId: String): PhotoStatus {
-        val exposure = container.repository.getExposure(exposureId) ?: return PhotoStatus.FAILED
+        val exposure = awaitExposure(exposureId) ?: return PhotoStatus.FAILED
         val lens = container.repository.getLens(exposure.lensId)
 
         val cameraProvider = ProcessCameraProvider.getInstance(this).await()
@@ -143,6 +144,19 @@ class CaptureForegroundService : LifecycleService() {
         } finally {
             cameraProvider.unbindAll()
         }
+    }
+
+    /**
+     * The watch can fire capture immediately after creating/pushing an exposure, so the command
+     * can occasionally arrive a moment before the phone has merged that exposure into local DB.
+     * Retry briefly instead of failing fast on this sync race.
+     */
+    private suspend fun awaitExposure(exposureId: String): com.exposures.model.Exposure? {
+        repeat(EXPOSURE_LOOKUP_ATTEMPTS) { attempt ->
+            container.repository.getExposure(exposureId)?.let { return it }
+            if (attempt < EXPOSURE_LOOKUP_ATTEMPTS - 1) delay(EXPOSURE_LOOKUP_INTERVAL_MS)
+        }
+        return null
     }
 
     private suspend fun takePicture(imageCapture: ImageCapture, outputFile: File) {
@@ -208,5 +222,7 @@ class CaptureForegroundService : LifecycleService() {
         const val EXTRA_EXPOSURE_ID = "exposureId"
         private const val NOTIFICATION_CHANNEL_ID = "capture"
         private const val NOTIFICATION_ID = 1
+        private const val EXPOSURE_LOOKUP_ATTEMPTS = 10
+        private const val EXPOSURE_LOOKUP_INTERVAL_MS = 300L
     }
 }

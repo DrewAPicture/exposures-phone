@@ -87,4 +87,22 @@ class DataLayerJsonTest {
 
         assertEquals("body-1", decoded.single().id)
     }
+
+    @Test
+    fun `a roll payload from a writer built before colorType existed still decodes`() {
+        val json = """[{"id":"roll-1","name":"Portra 400","filmStock":"Kodak Portra 400","boxSpeedIso":400,"format":"MEDIUM_FORMAT_120","cameraBodyId":"body-1","targetFrameCount":10,"status":"AVAILABLE","createdAt":0,"updatedAt":0}]"""
+
+        val decoded = DataLayerJson.decodeRolls(json)
+
+        assertEquals("COLOR", decoded.single().colorType)
+    }
+
+    @Test
+    fun `a lens payload from a writer built before referencePhotoZoomRatio existed still decodes`() {
+        val json = """[{"id":"lens-1","name":"110mm f2.8","minAperture":2.8,"maxAperture":32.0,"stopIncrement":"HALF_STOP","createdAt":0,"updatedAt":0}]"""
+
+        val decoded = DataLayerJson.decodeLenses(json)
+
+        assertEquals(1.0, decoded.single().referencePhotoZoomRatio, 0.0)
+    }
 }

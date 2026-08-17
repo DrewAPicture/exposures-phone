@@ -29,7 +29,9 @@ data class LensDto(
     val minAperture: Double,
     val maxAperture: Double,
     val stopIncrement: String,
-    val referencePhotoZoomRatio: Double,
+    // Defaulted (added after the original schema): a writer built before this field existed
+    // shouldn't hard-crash a newer reader over one missing zoom hint.
+    val referencePhotoZoomRatio: Double = 1.0,
     val createdAt: Long,
     val updatedAt: Long,
     val remoteId: String? = null,
@@ -53,7 +55,9 @@ data class FilmRollDto(
     val filmStock: String,
     val boxSpeedIso: Int,
     val format: String,
-    val colorType: String,
+    // Defaulted (added after the original schema): a writer built before this field existed
+    // shouldn't hard-crash a newer reader over one missing color-type tag.
+    val colorType: String = "COLOR",
     val cameraBodyId: String,
     val lightMeterId: String? = null,
     val targetFrameCount: Int,

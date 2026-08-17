@@ -53,6 +53,7 @@ data class FilmRollDto(
     val filmStock: String,
     val boxSpeedIso: Int,
     val format: String,
+    val colorType: String,
     val cameraBodyId: String,
     val lightMeterId: String? = null,
     val targetFrameCount: Int,

@@ -7,6 +7,7 @@ data class FilmRoll(
     val filmStock: String,
     val boxSpeedIso: Int,
     val format: FilmFormat,
+    val colorType: FilmColorType,
     val cameraBodyId: String,
     val lightMeterId: String?,
     val targetFrameCount: Int,

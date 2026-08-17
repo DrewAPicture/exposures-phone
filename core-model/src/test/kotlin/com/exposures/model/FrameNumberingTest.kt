@@ -31,6 +31,7 @@ class FrameNumberingTest {
         filmStock = "Kodak Portra 400",
         boxSpeedIso = 400,
         format = FilmFormat.MEDIUM_FORMAT_120,
+        colorType = FilmColorType.COLOR,
         cameraBodyId = "body-1",
         lightMeterId = null,
         targetFrameCount = targetFrameCount,

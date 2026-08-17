@@ -9,6 +9,7 @@ import com.exposures.datalayer.dto.PhotoStatusDto
 import com.exposures.datalayer.dto.ShutterSpeedDto
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
@@ -103,6 +104,7 @@ fun FilmRoll.toDto() = FilmRollDto(
     filmStock = filmStock,
     boxSpeedIso = boxSpeedIso,
     format = format.name,
+    colorType = colorType.name,
     cameraBodyId = cameraBodyId,
     lightMeterId = lightMeterId,
     targetFrameCount = targetFrameCount,
@@ -118,6 +120,7 @@ fun FilmRollDto.toDomain(syncStatus: SyncStatus) = FilmRoll(
     filmStock = filmStock,
     boxSpeedIso = boxSpeedIso,
     format = FilmFormat.valueOf(format),
+    colorType = FilmColorType.valueOf(colorType),
     cameraBodyId = cameraBodyId,
     lightMeterId = lightMeterId,
     targetFrameCount = targetFrameCount,

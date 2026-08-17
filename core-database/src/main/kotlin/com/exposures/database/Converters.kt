@@ -1,6 +1,7 @@
 package com.exposures.database
 
 import androidx.room.TypeConverter
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.LightMeterType
 import com.exposures.model.PhotoStatus
@@ -52,6 +53,12 @@ class Converters {
 
     @TypeConverter
     fun toFilmFormat(value: String): FilmFormat = FilmFormat.valueOf(value)
+
+    @TypeConverter
+    fun fromFilmColorType(value: FilmColorType): String = value.name
+
+    @TypeConverter
+    fun toFilmColorType(value: String): FilmColorType = FilmColorType.valueOf(value)
 
     @TypeConverter
     fun fromStopIncrement(value: StopIncrement): String = value.name

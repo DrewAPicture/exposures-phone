@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.LightMeter
@@ -26,6 +27,7 @@ data class FilmRollEditUiState(
     val filmStock: String = "",
     val boxSpeedIso: String = "",
     val format: FilmFormat = FilmFormat.MEDIUM_FORMAT_120,
+    val colorType: FilmColorType = FilmColorType.COLOR,
     val cameraBodyId: String? = null,
     val lightMeterId: String? = null,
     val targetFrameCount: String = "",
@@ -70,6 +72,7 @@ class FilmRollEditViewModel(
                     filmStock = existing.filmStock,
                     boxSpeedIso = existing.boxSpeedIso.toString(),
                     format = existing.format,
+                    colorType = existing.colorType,
                     cameraBodyId = existing.cameraBodyId,
                     lightMeterId = existing.lightMeterId,
                     targetFrameCount = existing.targetFrameCount.toString(),
@@ -92,6 +95,10 @@ class FilmRollEditViewModel(
 
     fun setFormat(format: FilmFormat) {
         _uiState.value = _uiState.value.copy(format = format)
+    }
+
+    fun setColorType(colorType: FilmColorType) {
+        _uiState.value = _uiState.value.copy(colorType = colorType)
     }
 
     fun setCameraBody(cameraBodyId: String) {
@@ -119,6 +126,7 @@ class FilmRollEditViewModel(
                 filmStock = state.filmStock,
                 boxSpeedIso = requireNotNull(state.boxSpeedIso.toIntOrNull()),
                 format = state.format,
+                colorType = state.colorType,
                 cameraBodyId = requireNotNull(state.cameraBodyId),
                 lightMeterId = state.lightMeterId,
                 targetFrameCount = requireNotNull(state.targetFrameCount.toIntOrNull()),

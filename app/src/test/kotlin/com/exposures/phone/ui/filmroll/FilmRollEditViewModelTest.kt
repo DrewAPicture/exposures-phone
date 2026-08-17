@@ -2,6 +2,7 @@ package com.exposures.phone.ui.filmroll
 
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmColorType
 import com.exposures.model.LightMeter
 import com.exposures.model.LightMeterType
 import com.exposures.model.ShutterSpeed
@@ -102,6 +103,46 @@ class FilmRollEditViewModelTest {
         assertEquals(400, saved.boxSpeedIso)
         assertEquals(10, saved.targetFrameCount)
         assertTrue(gateway.putPayloads.isNotEmpty())
+    }
+
+    @Test
+    fun `save persists the selected color type`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val gateway = FakeDataLayerGateway()
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("HP5 Plus — Roll 1")
+        viewModel.setFilmStock("Ilford HP5 Plus")
+        viewModel.setBoxSpeedIso("400")
+        viewModel.setTargetFrameCount("10")
+        viewModel.setColorType(FilmColorType.BLACK_AND_WHITE)
+
+        viewModel.save()
+        viewModel.uiState.first { it.done }
+
+        assertEquals(FilmColorType.BLACK_AND_WHITE, repository.observeFilmRolls().first().single().colorType)
+    }
+
+    @Test
+    fun `editing an existing roll loads its color type`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val gateway = FakeDataLayerGateway()
+        val createViewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        createViewModel.uiState.first { !it.isLoading }
+        createViewModel.setName("HP5 Plus — Roll 1")
+        createViewModel.setFilmStock("Ilford HP5 Plus")
+        createViewModel.setBoxSpeedIso("400")
+        createViewModel.setTargetFrameCount("10")
+        createViewModel.setColorType(FilmColorType.BLACK_AND_WHITE)
+        createViewModel.save()
+        val savedId = createViewModel.uiState.first { it.done }.let { repository.observeFilmRolls().first().single().id }
+
+        val editViewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, gateway), savedId)
+
+        val state = editViewModel.uiState.first { !it.isLoading }
+        assertEquals(FilmColorType.BLACK_AND_WHITE, state.colorType)
     }
 
     @Test

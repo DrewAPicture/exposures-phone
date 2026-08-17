@@ -2,6 +2,7 @@ package com.exposures.datalayer.mapper
 
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
@@ -79,6 +80,7 @@ class DtoMappersTest {
             filmStock = "Kodak Portra 400",
             boxSpeedIso = 400,
             format = FilmFormat.MEDIUM_FORMAT_120,
+            colorType = FilmColorType.COLOR,
             cameraBodyId = "body-1",
             lightMeterId = null,
             targetFrameCount = 10,
@@ -100,6 +102,7 @@ class DtoMappersTest {
             filmStock = "Ilford HP5 Plus",
             boxSpeedIso = 400,
             format = FilmFormat.MEDIUM_FORMAT_120,
+            colorType = FilmColorType.BLACK_AND_WHITE,
             cameraBodyId = "body-1",
             lightMeterId = "meter-1",
             targetFrameCount = 10,

@@ -4,6 +4,7 @@ import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerJson
 import com.exposures.datalayer.DataLayerPaths
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.RollStatus
@@ -39,6 +40,7 @@ class RollCompletionHandlerTest {
         filmStock = "Kodak Portra 400",
         boxSpeedIso = 400,
         format = FilmFormat.MEDIUM_FORMAT_120,
+        colorType = FilmColorType.COLOR,
         cameraBodyId = "body-1",
         lightMeterId = null,
         targetFrameCount = 10,

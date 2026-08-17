@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.exposures.database.ExposuresDatabase
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
@@ -92,6 +93,7 @@ class EquipmentRepositoryTest {
         filmStock = "Kodak Portra 400",
         boxSpeedIso = 400,
         format = FilmFormat.MEDIUM_FORMAT_120,
+        colorType = FilmColorType.COLOR,
         cameraBodyId = cameraBodyId,
         lightMeterId = lightMeterId,
         targetFrameCount = 10,

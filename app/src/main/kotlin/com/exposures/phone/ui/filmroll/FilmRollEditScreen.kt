@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.phone.ExposuresViewModelFactory
 import com.exposures.phone.ui.appContainer
@@ -62,6 +63,14 @@ fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
                 options = FilmFormat.entries,
                 optionLabel = { it.name },
                 onValueChange = viewModel::setFormat,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            DropdownField(
+                label = "Color type",
+                value = state.colorType,
+                options = FilmColorType.entries,
+                optionLabel = { it.name },
+                onValueChange = viewModel::setColorType,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             if (state.availableCameraBodies.isEmpty()) {

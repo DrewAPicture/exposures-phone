@@ -6,6 +6,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.exposures.database.ExposuresDatabase
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -81,6 +83,18 @@ class EquipmentRepositoryTest {
         name = "Spotmeter V",
         manufacturer = "Pentax",
         type = LightMeterType.SPOT,
+        createdAt = 0L,
+        updatedAt = 0L,
+        syncStatus = SyncStatus.PENDING_SYNC,
+        remoteId = null,
+    )
+
+    private fun filmBack(id: String = UUID.randomUUID().toString(), cameraBodyId: String) = FilmBack(
+        id = id,
+        name = "6x7 back",
+        cameraBodyId = cameraBodyId,
+        type = FilmBackType.ROLL_6X7,
+        availableFrameCounts = listOf(10),
         createdAt = 0L,
         updatedAt = 0L,
         syncStatus = SyncStatus.PENDING_SYNC,
@@ -183,6 +197,19 @@ class EquipmentRepositoryTest {
 
         repository.deleteLightMeter(savedLightMeter)
         assertNull(repository.getLightMeter(savedLightMeter.id))
+    }
+
+    @Test
+    fun `film back CRUD round-trips`() = runTest {
+        val body = cameraBody()
+        repository.saveCameraBody(body)
+        val back = filmBack(cameraBodyId = body.id)
+
+        repository.saveFilmBack(back)
+        assertEquals(back, repository.getFilmBack(back.id))
+
+        repository.deleteFilmBack(back)
+        assertNull(repository.getFilmBack(back.id))
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.exposures.datalayer.mapper
 
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -63,6 +65,23 @@ class DtoMappersTest {
             name = "Spotmeter V",
             manufacturer = "Pentax",
             type = LightMeterType.SPOT,
+            createdAt = 1L,
+            updatedAt = 2L,
+            syncStatus = SyncStatus.SYNCED,
+            remoteId = "remote-1",
+        )
+
+        assertEquals(original, original.toDto().toDomain(syncStatus = SyncStatus.SYNCED))
+    }
+
+    @Test
+    fun `film back round-trips through its dto`() {
+        val original = FilmBack(
+            id = "back-1",
+            name = "6x7 back",
+            cameraBodyId = "body-1",
+            type = FilmBackType.ROLL_6X7,
+            availableFrameCounts = listOf(10, 11),
             createdAt = 1L,
             updatedAt = 2L,
             syncStatus = SyncStatus.SYNCED,

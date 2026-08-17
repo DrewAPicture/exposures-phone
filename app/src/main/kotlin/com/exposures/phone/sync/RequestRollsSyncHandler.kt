@@ -8,6 +8,7 @@ package com.exposures.phone.sync
 class RequestRollsSyncHandler(private val syncPusher: EquipmentSyncPusher) {
     suspend fun handle() {
         syncPusher.pushCameraBodies()
+        syncPusher.pushFilmBacks()
         syncPusher.pushLenses()
         syncPusher.pushLightMeters()
         syncPusher.pushFilmRolls()

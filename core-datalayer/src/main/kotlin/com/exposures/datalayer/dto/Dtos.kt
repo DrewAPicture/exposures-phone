@@ -49,6 +49,18 @@ data class LightMeterDto(
 )
 
 @Serializable
+data class FilmBackDto(
+    val id: String,
+    val name: String,
+    val cameraBodyId: String,
+    val type: String,
+    val availableFrameCounts: List<Int>,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val remoteId: String? = null,
+)
+
+@Serializable
 data class FilmRollDto(
     val id: String,
     val name: String,

@@ -14,6 +14,7 @@ object DataLayerPaths {
     const val CAMERA_BODIES = "/equipment/camera-bodies" // phone writes, watch reads
     const val LENSES = "/equipment/lenses" // phone writes, watch reads
     const val LIGHT_METERS = "/equipment/light-meters" // phone writes, watch reads
+    const val FILM_BACKS = "/equipment/film-backs" // phone writes, watch reads
     const val ROLLS = "/rolls" // phone writes, watch reads
     const val EXPOSURES = "/exposures" // watch writes, phone reads
     const val PHOTO_STATUSES = "/photo-status" // phone writes, watch reads

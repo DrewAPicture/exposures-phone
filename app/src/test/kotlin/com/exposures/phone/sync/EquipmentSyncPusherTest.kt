@@ -4,6 +4,8 @@ import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerJson
 import com.exposures.datalayer.DataLayerPaths
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -40,6 +42,12 @@ class EquipmentSyncPusherTest {
     private fun lightMeter() = LightMeter(
         id = "meter-1", name = "Spotmeter V", manufacturer = "Pentax", type = LightMeterType.SPOT,
         createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.PENDING_SYNC, remoteId = null,
+    )
+
+    private fun filmBack() = FilmBack(
+        id = "back-1", name = "6x7 back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X7,
+        availableFrameCounts = listOf(10), createdAt = 0L, updatedAt = 0L,
+        syncStatus = SyncStatus.PENDING_SYNC, remoteId = null,
     )
 
     private fun filmRoll() = FilmRoll(
@@ -86,6 +94,20 @@ class EquipmentSyncPusherTest {
 
         val payload = requireNotNull(gateway.lastPayload(DataLayerPaths.LIGHT_METERS))
         assertEquals("meter-1", DataLayerJson.decodeLightMeters(payload).single().id)
+    }
+
+    @Test
+    fun `pushFilmBacks puts the current list at the film-backs path`() = runTest {
+        val repository = createTestRepository()
+        repository.saveCameraBody(cameraBody()) // filmBack() FKs to this camera body
+        repository.saveFilmBack(filmBack())
+        val gateway = FakeDataLayerGateway()
+        val pusher = EquipmentSyncPusher(repository, gateway)
+
+        pusher.pushFilmBacks()
+
+        val payload = requireNotNull(gateway.lastPayload(DataLayerPaths.FILM_BACKS))
+        assertEquals("back-1", DataLayerJson.decodeFilmBacks(payload).single().id)
     }
 
     @Test

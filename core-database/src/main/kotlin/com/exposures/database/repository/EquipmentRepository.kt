@@ -5,6 +5,7 @@ import com.exposures.database.mapper.toDomain
 import com.exposures.database.mapper.toEntity
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmBack
 import com.exposures.model.FilmRoll
 import com.exposures.model.Lens
 import com.exposures.model.LightMeter
@@ -47,6 +48,15 @@ class EquipmentRepository(private val database: ExposuresDatabase) {
     suspend fun saveLightMeter(lightMeter: LightMeter) = database.lightMeterDao().save(lightMeter.toEntity())
 
     suspend fun deleteLightMeter(lightMeter: LightMeter) = database.lightMeterDao().delete(lightMeter.toEntity())
+
+    fun observeFilmBacks(): Flow<List<FilmBack>> =
+        database.filmBackDao().getAll().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getFilmBack(id: String): FilmBack? = database.filmBackDao().getById(id)?.toDomain()
+
+    suspend fun saveFilmBack(filmBack: FilmBack) = database.filmBackDao().save(filmBack.toEntity())
+
+    suspend fun deleteFilmBack(filmBack: FilmBack) = database.filmBackDao().delete(filmBack.toEntity())
 
     fun observeFilmRolls(): Flow<List<FilmRoll>> =
         database.filmRollDao().getAll().map { entities -> entities.map { it.toDomain() } }

@@ -5,6 +5,7 @@ import com.exposures.datalayer.dto.CapturePhotoCommand
 import com.exposures.datalayer.dto.CaptureResultCommand
 import com.exposures.datalayer.dto.CompleteRollCommand
 import com.exposures.datalayer.dto.ExposureDto
+import com.exposures.datalayer.dto.FilmBackDto
 import com.exposures.datalayer.dto.FilmRollDto
 import com.exposures.datalayer.dto.LensDto
 import com.exposures.datalayer.dto.LightMeterDto
@@ -24,6 +25,9 @@ object DataLayerJson {
 
     fun encodeLightMeters(value: List<LightMeterDto>): String = instance.encodeToString(value)
     fun decodeLightMeters(json: String): List<LightMeterDto> = instance.decodeFromString(json)
+
+    fun encodeFilmBacks(value: List<FilmBackDto>): String = instance.encodeToString(value)
+    fun decodeFilmBacks(json: String): List<FilmBackDto> = instance.decodeFromString(json)
 
     fun encodeRolls(value: List<FilmRollDto>): String = instance.encodeToString(value)
     fun decodeRolls(json: String): List<FilmRollDto> = instance.decodeFromString(json)

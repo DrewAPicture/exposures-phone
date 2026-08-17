@@ -4,6 +4,7 @@ import com.exposures.datalayer.dto.CameraBodyDto
 import com.exposures.datalayer.dto.CapturePhotoCommand
 import com.exposures.datalayer.dto.CaptureResultCommand
 import com.exposures.datalayer.dto.ExposureDto
+import com.exposures.datalayer.dto.FilmBackDto
 import com.exposures.datalayer.dto.FilmRollDto
 import com.exposures.datalayer.dto.LensDto
 import com.exposures.datalayer.dto.PhotoStatusDto
@@ -35,6 +36,17 @@ class DataLayerJsonTest {
     @Test
     fun `empty list round-trips to an empty list, not a decode error`() {
         assertEquals(emptyList<LensDto>(), DataLayerJson.decodeLenses(DataLayerJson.encodeLenses(emptyList())))
+    }
+
+    @Test
+    fun `film backs round-trip through json`() {
+        val filmBacks = listOf(
+            FilmBackDto(
+                id = "back-1", name = "6x7 back", cameraBodyId = "body-1", type = "ROLL_6X7",
+                availableFrameCounts = listOf(10, 11), createdAt = 0L, updatedAt = 0L,
+            ),
+        )
+        assertEquals(filmBacks, DataLayerJson.decodeFilmBacks(DataLayerJson.encodeFilmBacks(filmBacks)))
     }
 
     @Test

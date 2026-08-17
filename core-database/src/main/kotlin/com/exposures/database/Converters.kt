@@ -1,6 +1,7 @@
 package com.exposures.database
 
 import androidx.room.TypeConverter
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.LightMeterType
@@ -71,4 +72,17 @@ class Converters {
 
     @TypeConverter
     fun toLightMeterType(value: String): LightMeterType = LightMeterType.valueOf(value)
+
+    @TypeConverter
+    fun fromFilmBackType(value: FilmBackType): String = value.name
+
+    @TypeConverter
+    fun toFilmBackType(value: String): FilmBackType = FilmBackType.valueOf(value)
+
+    @TypeConverter
+    fun fromFrameCountList(value: List<Int>): String = value.joinToString(";")
+
+    @TypeConverter
+    fun toFrameCountList(value: String): List<Int> =
+        if (value.isBlank()) emptyList() else value.split(";").map(String::toInt)
 }

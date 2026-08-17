@@ -2,6 +2,7 @@ package com.exposures.datalayer.mapper
 
 import com.exposures.datalayer.dto.CameraBodyDto
 import com.exposures.datalayer.dto.ExposureDto
+import com.exposures.datalayer.dto.FilmBackDto
 import com.exposures.datalayer.dto.FilmRollDto
 import com.exposures.datalayer.dto.LensDto
 import com.exposures.datalayer.dto.LightMeterDto
@@ -9,6 +10,8 @@ import com.exposures.datalayer.dto.PhotoStatusDto
 import com.exposures.datalayer.dto.ShutterSpeedDto
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -92,6 +95,29 @@ fun LightMeterDto.toDomain(syncStatus: SyncStatus) = LightMeter(
     name = name,
     manufacturer = manufacturer,
     type = LightMeterType.valueOf(type),
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    syncStatus = syncStatus,
+    remoteId = remoteId,
+)
+
+fun FilmBack.toDto() = FilmBackDto(
+    id = id,
+    name = name,
+    cameraBodyId = cameraBodyId,
+    type = type.name,
+    availableFrameCounts = availableFrameCounts,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    remoteId = remoteId,
+)
+
+fun FilmBackDto.toDomain(syncStatus: SyncStatus) = FilmBack(
+    id = id,
+    name = name,
+    cameraBodyId = cameraBodyId,
+    type = FilmBackType.valueOf(type),
+    availableFrameCounts = availableFrameCounts,
     createdAt = createdAt,
     updatedAt = updatedAt,
     syncStatus = syncStatus,

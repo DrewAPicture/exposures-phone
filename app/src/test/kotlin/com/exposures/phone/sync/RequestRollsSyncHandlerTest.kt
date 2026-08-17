@@ -3,6 +3,8 @@ package com.exposures.phone.sync
 import com.exposures.datalayer.DataLayerJson
 import com.exposures.datalayer.DataLayerPaths
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -28,6 +30,18 @@ class RequestRollsSyncHandlerTest {
         manufacturer = "Mamiya",
         availableShutterSpeeds = listOf(ShutterSpeed.fraction(400)),
         hasBulbMode = true,
+        createdAt = 0L,
+        updatedAt = 0L,
+        syncStatus = SyncStatus.SYNCED,
+        remoteId = null,
+    )
+
+    private fun filmBack() = FilmBack(
+        id = "back-1",
+        name = "6x7 back",
+        cameraBodyId = "body-1",
+        type = FilmBackType.ROLL_6X7,
+        availableFrameCounts = listOf(10),
         createdAt = 0L,
         updatedAt = 0L,
         syncStatus = SyncStatus.SYNCED,
@@ -69,6 +83,7 @@ class RequestRollsSyncHandlerTest {
     fun `handle pushes full equipment snapshot to all equipment data paths`() = runTest {
         val repository = createTestRepository()
         repository.saveCameraBody(cameraBody())
+        repository.saveFilmBack(filmBack())
         repository.saveLens(lens())
         repository.saveFilmRoll(roll())
         val gateway = FakeDataLayerGateway()
@@ -77,11 +92,13 @@ class RequestRollsSyncHandlerTest {
         RequestRollsSyncHandler(pusher).handle()
 
         val bodiesPayload = requireNotNull(gateway.lastPayload(DataLayerPaths.CAMERA_BODIES))
+        val filmBacksPayload = requireNotNull(gateway.lastPayload(DataLayerPaths.FILM_BACKS))
         val lensesPayload = requireNotNull(gateway.lastPayload(DataLayerPaths.LENSES))
         val rollsPayload = requireNotNull(gateway.lastPayload(DataLayerPaths.ROLLS))
         val lightMetersPayload = requireNotNull(gateway.lastPayload(DataLayerPaths.LIGHT_METERS))
 
         assertEquals("body-1", DataLayerJson.decodeCameraBodies(bodiesPayload).single().id)
+        assertEquals("back-1", DataLayerJson.decodeFilmBacks(filmBacksPayload).single().id)
         assertEquals("lens-1", DataLayerJson.decodeLenses(lensesPayload).single().id)
         assertEquals("roll-1", DataLayerJson.decodeRolls(rollsPayload).single().id)
         assertTrue(DataLayerJson.decodeLightMeters(lightMetersPayload).isEmpty())

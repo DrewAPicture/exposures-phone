@@ -18,10 +18,19 @@ data class HomeUiState(
     val cameraBodyCount: Int = 0,
     val lensCount: Int = 0,
     val lightMeterCount: Int = 0,
+    val filmBackCount: Int = 0,
     val filmRollCount: Int = 0,
     val exposureCount: Int = 0,
     val pendingSyncCount: Int = 0, // exposures + reference photos not yet uploaded to the remote backend
     val watchReachable: Boolean? = null, // null while unchecked
+)
+
+/** combine() only has direct overloads up to 5 flows, so the equipment counts are pre-combined into one value to keep the outer combine within that limit. */
+private data class EquipmentCounts(
+    val cameraBodyCount: Int,
+    val lensCount: Int,
+    val lightMeterCount: Int,
+    val filmBackCount: Int,
 )
 
 class HomeViewModel(
@@ -33,13 +42,14 @@ class HomeViewModel(
 
     private val _watchReachable = MutableStateFlow<Boolean?>(null)
 
-    // combine() only has direct overloads up to 5 flows, so the equipment counts are pre-combined
-    // into one Triple to keep the outer combine within that limit.
     private val equipmentCounts = combine(
         repository.observeCameraBodies(),
         repository.observeLenses(),
         repository.observeLightMeters(),
-    ) { bodies, lenses, lightMeters -> Triple(bodies.size, lenses.size, lightMeters.size) }
+        repository.observeFilmBacks(),
+    ) { bodies, lenses, lightMeters, filmBacks ->
+        EquipmentCounts(bodies.size, lenses.size, lightMeters.size, filmBacks.size)
+    }
 
     private val pendingSyncCount = combine(
         repository.observeDirtyExposures(),
@@ -52,12 +62,13 @@ class HomeViewModel(
         repository.observeAllExposures(),
         _watchReachable,
         pendingSyncCount,
-    ) { (cameraBodyCount, lensCount, lightMeterCount), rolls, exposures, reachable, pendingSync ->
+    ) { equipment, rolls, exposures, reachable, pendingSync ->
         HomeUiState(
             isLoading = false,
-            cameraBodyCount = cameraBodyCount,
-            lensCount = lensCount,
-            lightMeterCount = lightMeterCount,
+            cameraBodyCount = equipment.cameraBodyCount,
+            lensCount = equipment.lensCount,
+            lightMeterCount = equipment.lightMeterCount,
+            filmBackCount = equipment.filmBackCount,
             filmRollCount = rolls.size,
             exposureCount = exposures.size,
             pendingSyncCount = pendingSync,

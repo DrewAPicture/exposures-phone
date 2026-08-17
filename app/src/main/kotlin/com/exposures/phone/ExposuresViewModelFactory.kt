@@ -8,6 +8,8 @@ import com.exposures.phone.export.CsvExportCoordinator
 import com.exposures.phone.sync.EquipmentSyncPusher
 import com.exposures.phone.ui.camerabody.CameraBodyEditViewModel
 import com.exposures.phone.ui.camerabody.CameraBodyListViewModel
+import com.exposures.phone.ui.filmback.FilmBackEditViewModel
+import com.exposures.phone.ui.filmback.FilmBackListViewModel
 import com.exposures.phone.ui.filmroll.FilmRollEditViewModel
 import com.exposures.phone.ui.filmroll.FilmRollListViewModel
 import com.exposures.phone.ui.home.HomeViewModel
@@ -36,6 +38,8 @@ class ExposuresViewModelFactory(
         LensEditViewModel::class.java -> LensEditViewModel(repository, syncPusher, entityId)
         LightMeterListViewModel::class.java -> LightMeterListViewModel(repository)
         LightMeterEditViewModel::class.java -> LightMeterEditViewModel(repository, syncPusher, entityId)
+        FilmBackListViewModel::class.java -> FilmBackListViewModel(repository)
+        FilmBackEditViewModel::class.java -> FilmBackEditViewModel(repository, syncPusher, entityId)
         FilmRollListViewModel::class.java -> FilmRollListViewModel(repository, requireNotNull(csvExportCoordinator))
         FilmRollEditViewModel::class.java -> FilmRollEditViewModel(repository, syncPusher, entityId)
         else -> error("Unknown ViewModel class: $modelClass")

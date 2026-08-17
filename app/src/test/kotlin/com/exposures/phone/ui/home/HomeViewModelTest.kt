@@ -1,6 +1,9 @@
 package com.exposures.phone.ui.home
 
+import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.PhotoStatus
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.SyncStatus
@@ -109,6 +112,29 @@ class HomeViewModelTest {
         val state = viewModel.uiState.first { !it.isLoading }
 
         assertEquals(1, state.pendingSyncCount)
+    }
+
+    @Test
+    fun `filmBackCount reflects the number of configured film backs`() = runTest {
+        val repository = createTestRepository()
+        val body = CameraBody(
+            id = "body-1", name = "RZ67 Pro II", manufacturer = "Mamiya",
+            availableShutterSpeeds = listOf(ShutterSpeed.fraction(400)),
+            hasBulbMode = true, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
+        )
+        repository.saveCameraBody(body)
+        repository.saveFilmBack(
+            FilmBack(
+                id = "back-1", name = "6x7 back", cameraBodyId = body.id, type = FilmBackType.ROLL_6X7,
+                availableFrameCounts = listOf(10), createdAt = 0L, updatedAt = 0L,
+                syncStatus = SyncStatus.SYNCED, remoteId = null,
+            ),
+        )
+        val viewModel = HomeViewModel(repository, FakeDataLayerGateway(), CsvExportCoordinator(repository))
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(1, state.filmBackCount)
     }
 
     @Test

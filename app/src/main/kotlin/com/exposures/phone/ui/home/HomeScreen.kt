@@ -34,6 +34,7 @@ fun HomeScreen(
     onOpenCameraBodies: () -> Unit,
     onOpenLenses: () -> Unit,
     onOpenLightMeters: () -> Unit,
+    onOpenFilmBacks: () -> Unit,
     onOpenFilmRolls: () -> Unit,
 ) {
     val container = appContainer()
@@ -104,6 +105,11 @@ fun HomeScreen(
                 headlineContent = { Text("Light Meters") },
                 supportingContent = { Text("${state.lightMeterCount} configured") },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenLightMeters),
+            )
+            ListItem(
+                headlineContent = { Text("Film Backs") },
+                supportingContent = { Text("${state.filmBackCount} configured") },
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenFilmBacks),
             )
             ListItem(
                 headlineContent = { Text("Film Rolls") },

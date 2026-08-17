@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.exposures.phone.ui.camerabody.CameraBodyEditScreen
 import com.exposures.phone.ui.camerabody.CameraBodyListScreen
+import com.exposures.phone.ui.filmback.FilmBackEditScreen
+import com.exposures.phone.ui.filmback.FilmBackListScreen
 import com.exposures.phone.ui.filmroll.FilmRollEditScreen
 import com.exposures.phone.ui.filmroll.FilmRollListScreen
 import com.exposures.phone.ui.home.HomeScreen
@@ -31,6 +33,7 @@ fun ExposuresNavHost() {
                 onOpenCameraBodies = { navController.navigate(Routes.CAMERA_BODY_LIST) },
                 onOpenLenses = { navController.navigate(Routes.LENS_LIST) },
                 onOpenLightMeters = { navController.navigate(Routes.LIGHT_METER_LIST) },
+                onOpenFilmBacks = { navController.navigate(Routes.FILM_BACK_LIST) },
                 onOpenFilmRolls = { navController.navigate(Routes.FILM_ROLL_LIST) },
             )
         }
@@ -69,6 +72,19 @@ fun ExposuresNavHost() {
         }
         composable(Routes.LIGHT_METER_EDIT, arguments = listOf(idArgument)) { backStackEntry ->
             LightMeterEditScreen(
+                id = backStackEntry.arguments?.getString(Routes.ARG_ID),
+                onDone = { navController.popBackStack() },
+            )
+        }
+
+        composable(Routes.FILM_BACK_LIST) {
+            FilmBackListScreen(
+                onAdd = { navController.navigate(Routes.filmBackEdit()) },
+                onEdit = { id -> navController.navigate(Routes.filmBackEdit(id)) },
+            )
+        }
+        composable(Routes.FILM_BACK_EDIT, arguments = listOf(idArgument)) { backStackEntry ->
+            FilmBackEditScreen(
                 id = backStackEntry.arguments?.getString(Routes.ARG_ID),
                 onDone = { navController.popBackStack() },
             )

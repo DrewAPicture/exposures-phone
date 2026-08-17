@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.exposures.model.ShutterSpeed
@@ -64,6 +65,19 @@ fun CameraBodyEditScreen(id: String?, onDone: () -> Unit) {
                 options = ShutterSpeed.STANDARD_FULL_STOPS,
                 optionLabel = ShutterSpeed::label,
                 onValueChange = viewModel::setSlowestShutterSpeed,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            OutlinedTextField(
+                value = state.otherFastShutterSpeedDenominator,
+                onValueChange = viewModel::setOtherFastShutterSpeedDenominator,
+                label = { Text("Other fast shutter speed (optional)") },
+                supportingText = {
+                    Text(
+                        "For a body whose fastest speed doesn't land on a standard stop — e.g. a " +
+                            "leaf shutter topping out at 1/400. Enter just the denominator (400).",
+                    )
+                },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             Row(

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
 import com.exposures.model.ShutterSpeed
+import com.exposures.model.ShutterSpeedKind
 import com.exposures.model.SyncStatus
 import com.exposures.phone.sync.EquipmentSyncPusher
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,11 +21,19 @@ data class CameraBodyEditUiState(
     val manufacturer: String = "",
     val fastestShutterSpeed: ShutterSpeed = ShutterSpeed.STANDARD_FULL_STOPS.first(),
     val slowestShutterSpeed: ShutterSpeed = ShutterSpeed.STANDARD_FULL_STOPS.last(),
+    /** An extra fast shutter speed (as a fraction denominator) outside the standard stops — e.g. a
+     * leaf shutter topping out at 1/400. Blank means none. See [ShutterSpeed.standardRange]. */
+    val otherFastShutterSpeedDenominator: String = "",
     val hasBulbMode: Boolean = true,
     val done: Boolean = false,
 ) {
+    private val otherShutterSpeedValid: Boolean
+        get() = otherFastShutterSpeedDenominator.isBlank() ||
+            otherFastShutterSpeedDenominator.toIntOrNull()?.let { it > 0 } == true
+
     val canSave: Boolean
-        get() = name.isNotBlank() && manufacturer.isNotBlank() && fastestShutterSpeed <= slowestShutterSpeed
+        get() = name.isNotBlank() && manufacturer.isNotBlank() &&
+            fastestShutterSpeed <= slowestShutterSpeed && otherShutterSpeedValid
 }
 
 class CameraBodyEditViewModel(
@@ -46,14 +55,20 @@ class CameraBodyEditViewModel(
                 _uiState.value = if (body == null) {
                     _uiState.value.copy(isLoading = false)
                 } else {
+                    // Separate the standard-stop speeds (drive the Fastest/Slowest bounds) from any
+                    // extra speed outside that scale (the "Other" field) — see the field's doc comment.
+                    val nonBulb = body.availableShutterSpeeds.filter { it != ShutterSpeed.BULB }
+                    val standardSpeeds = nonBulb.filter { it in ShutterSpeed.STANDARD_FULL_STOPS }
+                    val otherSpeed = nonBulb.firstOrNull { it !in ShutterSpeed.STANDARD_FULL_STOPS }
                     _uiState.value.copy(
                         isLoading = false,
                         name = body.name,
                         manufacturer = body.manufacturer,
-                        fastestShutterSpeed = body.availableShutterSpeeds.filter { it != ShutterSpeed.BULB }.minOrNull()
-                            ?: ShutterSpeed.STANDARD_FULL_STOPS.first(),
-                        slowestShutterSpeed = body.availableShutterSpeeds.filter { it != ShutterSpeed.BULB }.maxOrNull()
-                            ?: ShutterSpeed.STANDARD_FULL_STOPS.last(),
+                        fastestShutterSpeed = standardSpeeds.minOrNull() ?: ShutterSpeed.STANDARD_FULL_STOPS.first(),
+                        slowestShutterSpeed = standardSpeeds.maxOrNull() ?: ShutterSpeed.STANDARD_FULL_STOPS.last(),
+                        otherFastShutterSpeedDenominator = otherSpeed
+                            ?.takeIf { it.kind == ShutterSpeedKind.FRACTION }
+                            ?.denominator?.toString().orEmpty(),
                         hasBulbMode = body.hasBulbMode,
                     )
                 }
@@ -77,6 +92,10 @@ class CameraBodyEditViewModel(
         _uiState.value = _uiState.value.copy(slowestShutterSpeed = speed)
     }
 
+    fun setOtherFastShutterSpeedDenominator(value: String) {
+        _uiState.value = _uiState.value.copy(otherFastShutterSpeedDenominator = value)
+    }
+
     fun setHasBulbMode(hasBulbMode: Boolean) {
         _uiState.value = _uiState.value.copy(hasBulbMode = hasBulbMode)
     }
@@ -87,15 +106,19 @@ class CameraBodyEditViewModel(
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val existing = repository.getCameraBody(id)
+            val standardSpeeds = ShutterSpeed.standardRange(
+                fastest = state.fastestShutterSpeed,
+                slowest = state.slowestShutterSpeed,
+                includeBulb = state.hasBulbMode,
+            )
+            val otherSpeed = state.otherFastShutterSpeedDenominator.toIntOrNull()
+                ?.takeIf { it > 0 }
+                ?.let(ShutterSpeed::fraction)
             val body = CameraBody(
                 id = id,
                 name = state.name,
                 manufacturer = state.manufacturer,
-                availableShutterSpeeds = ShutterSpeed.standardRange(
-                    fastest = state.fastestShutterSpeed,
-                    slowest = state.slowestShutterSpeed,
-                    includeBulb = state.hasBulbMode,
-                ),
+                availableShutterSpeeds = (standardSpeeds + listOfNotNull(otherSpeed)).distinct().sorted(),
                 hasBulbMode = state.hasBulbMode,
                 createdAt = existing?.createdAt ?: now,
                 updatedAt = now,

@@ -99,13 +99,34 @@ fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
                 onValueChange = { viewModel.setLightMeter(it?.id) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
-            OutlinedTextField(
-                value = state.targetFrameCount,
-                onValueChange = viewModel::setTargetFrameCount,
-                label = { Text("Target frame count") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
+            val filmBacksForBody = state.availableFilmBacks.filter { it.cameraBodyId == state.cameraBodyId }
+            if (filmBacksForBody.isEmpty()) {
+                Text(
+                    "Add a film back for this camera body first — a roll needs one.",
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            } else {
+                DropdownField(
+                    label = "Film back",
+                    value = filmBacksForBody.firstOrNull { it.id == state.filmBackId },
+                    options = filmBacksForBody,
+                    optionLabel = { it?.name ?: "Select a film back" },
+                    onValueChange = { it?.let { back -> viewModel.setFilmBack(back.id) } },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+            }
+            val selectedFilmBack = filmBacksForBody.firstOrNull { it.id == state.filmBackId }
+            val frameCountOptions = selectedFilmBack?.availableFrameCounts ?: emptyList()
+            if (frameCountOptions.isNotEmpty()) {
+                DropdownField(
+                    label = "Target frame count",
+                    value = state.targetFrameCount ?: frameCountOptions.first(),
+                    options = frameCountOptions,
+                    optionLabel = { it.toString() },
+                    onValueChange = viewModel::setTargetFrameCount,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+            }
             Button(
                 onClick = viewModel::save,
                 enabled = state.canSave,

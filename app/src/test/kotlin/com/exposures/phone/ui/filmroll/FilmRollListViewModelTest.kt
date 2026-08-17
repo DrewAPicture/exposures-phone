@@ -1,6 +1,8 @@
 package com.exposures.phone.ui.filmroll
 
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -34,11 +36,18 @@ class FilmRollListViewModelTest {
                 hasBulbMode = true, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
             ),
         )
+        repository.saveFilmBack(
+            FilmBack(
+                id = "back-1", name = "6x7 back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X7,
+                availableFrameCounts = listOf(10), createdAt = 0L, updatedAt = 0L,
+                syncStatus = SyncStatus.SYNCED, remoteId = null,
+            ),
+        )
         repository.saveFilmRoll(
             FilmRoll(
                 id = "roll-1", name = "Portra 400 — Roll 1", filmStock = "Portra 400", boxSpeedIso = 400,
                 format = FilmFormat.MEDIUM_FORMAT_120, colorType = FilmColorType.COLOR, cameraBodyId = "body-1", lightMeterId = null,
-                targetFrameCount = 10, status = RollStatus.AVAILABLE,
+                filmBackId = "back-1", targetFrameCount = 10, status = RollStatus.AVAILABLE,
                 createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
             ),
         )

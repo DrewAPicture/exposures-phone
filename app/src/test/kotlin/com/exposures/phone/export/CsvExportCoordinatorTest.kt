@@ -2,6 +2,8 @@ package com.exposures.phone.export
 
 import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -28,10 +30,16 @@ class CsvExportCoordinatorTest {
         hasBulbMode = true, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
     )
 
+    private fun filmBack(id: String) = FilmBack(
+        id = id, name = "6x7 back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X7,
+        availableFrameCounts = listOf(10), createdAt = 0L, updatedAt = 0L,
+        syncStatus = SyncStatus.SYNCED, remoteId = null,
+    )
+
     private fun roll(id: String, name: String) = FilmRoll(
         id = id, name = name, filmStock = "Portra 400", boxSpeedIso = 400,
         format = FilmFormat.MEDIUM_FORMAT_120, colorType = FilmColorType.COLOR, cameraBodyId = "body-1", lightMeterId = null,
-        targetFrameCount = 10, status = RollStatus.AVAILABLE,
+        filmBackId = "back-1", targetFrameCount = 10, status = RollStatus.AVAILABLE,
         createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
     )
 
@@ -58,6 +66,7 @@ class CsvExportCoordinatorTest {
     fun `exportRoll produces a CSV of only that roll's exposures`() = runTest {
         val repository = createTestRepository()
         repository.saveCameraBody(cameraBody("body-1"))
+        repository.saveFilmBack(filmBack("back-1"))
         repository.saveFilmRoll(roll("roll-1", "Portra 400 — Roll 1"))
         repository.saveFilmRoll(roll("roll-2", "Portra 400 — Roll 2"))
         repository.saveLens(lens("lens-1", "110mm f/2.8"))
@@ -75,6 +84,7 @@ class CsvExportCoordinatorTest {
     fun `exportAll produces a CSV covering every roll, distinguished by the Roll column`() = runTest {
         val repository = createTestRepository()
         repository.saveCameraBody(cameraBody("body-1"))
+        repository.saveFilmBack(filmBack("back-1"))
         repository.saveFilmRoll(roll("roll-1", "Alpha Roll"))
         repository.saveFilmRoll(roll("roll-2", "Beta Roll"))
         repository.saveLens(lens("lens-1", "Lens"))

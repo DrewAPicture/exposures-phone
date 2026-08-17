@@ -10,6 +10,7 @@ data class FilmRoll(
     val colorType: FilmColorType,
     val cameraBodyId: String,
     val lightMeterId: String?,
+    val filmBackId: String,
     val targetFrameCount: Int,
     val status: RollStatus,
     val createdAt: Long,

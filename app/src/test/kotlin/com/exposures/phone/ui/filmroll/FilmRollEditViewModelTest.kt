@@ -2,6 +2,8 @@ package com.exposures.phone.ui.filmroll
 
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.LightMeter
 import com.exposures.model.LightMeterType
@@ -28,24 +30,22 @@ class FilmRollEditViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private suspend fun seededCameraBody(repository: EquipmentRepository): CameraBody {
-        val body = CameraBody(
-            id = "body-1", name = "RZ67 Pro II", manufacturer = "Mamiya",
-            availableShutterSpeeds = ShutterSpeed.standardRange(ShutterSpeed.fraction(400), ShutterSpeed.wholeSeconds(8)),
-            hasBulbMode = true, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
-        )
-        repository.saveCameraBody(body)
-        return body
-    }
+    private suspend fun seededCameraBody(repository: EquipmentRepository, id: String = "body-1") = CameraBody(
+        id = id, name = "RZ67 Pro II", manufacturer = "Mamiya",
+        availableShutterSpeeds = ShutterSpeed.standardRange(ShutterSpeed.fraction(400), ShutterSpeed.wholeSeconds(8)),
+        hasBulbMode = true, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
+    ).also { repository.saveCameraBody(it) }
 
-    private suspend fun seededLightMeter(repository: EquipmentRepository): LightMeter {
-        val meter = LightMeter(
-            id = "meter-1", name = "Spotmeter V", manufacturer = "Pentax", type = LightMeterType.SPOT,
-            createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
-        )
-        repository.saveLightMeter(meter)
-        return meter
-    }
+    private suspend fun seededLightMeter(repository: EquipmentRepository) = LightMeter(
+        id = "meter-1", name = "Spotmeter V", manufacturer = "Pentax", type = LightMeterType.SPOT,
+        createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
+    ).also { repository.saveLightMeter(it) }
+
+    private suspend fun seededFilmBack(repository: EquipmentRepository, cameraBodyId: String, id: String = "back-1") = FilmBack(
+        id = id, name = "6x7 back", cameraBodyId = cameraBodyId, type = FilmBackType.ROLL_6X7,
+        availableFrameCounts = listOf(10, 11), createdAt = 0L, updatedAt = 0L,
+        syncStatus = SyncStatus.SYNCED, remoteId = null,
+    ).also { repository.saveFilmBack(it) }
 
     @Test
     fun `cannot save without a camera body when none exist yet`() = runTest {
@@ -69,7 +69,7 @@ class FilmRollEditViewModelTest {
     }
 
     @Test
-    fun `cannot save with a non-positive target frame count`() = runTest {
+    fun `cannot save without a film back selected`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
@@ -78,8 +78,8 @@ class FilmRollEditViewModelTest {
         viewModel.setName("Portra 400 — Roll 1")
         viewModel.setFilmStock("Kodak Portra 400")
         viewModel.setBoxSpeedIso("400")
-        viewModel.setTargetFrameCount("0")
 
+        assertNull(viewModel.uiState.value.filmBackId)
         assertFalse(viewModel.uiState.value.canSave)
     }
 
@@ -87,13 +87,15 @@ class FilmRollEditViewModelTest {
     fun `save persists the roll and pushes it to the watch`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
         val gateway = FakeDataLayerGateway()
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("Portra 400 — Roll 1")
         viewModel.setFilmStock("Kodak Portra 400")
         viewModel.setBoxSpeedIso("400")
-        viewModel.setTargetFrameCount("10")
+        viewModel.setFilmBack(back.id)
+        viewModel.setTargetFrameCount(10)
 
         viewModel.save()
         viewModel.uiState.first { it.done }
@@ -101,6 +103,7 @@ class FilmRollEditViewModelTest {
         val saved = repository.observeFilmRolls().first().single()
         assertEquals("Portra 400 — Roll 1", saved.name)
         assertEquals(400, saved.boxSpeedIso)
+        assertEquals(back.id, saved.filmBackId)
         assertEquals(10, saved.targetFrameCount)
         assertTrue(gateway.putPayloads.isNotEmpty())
     }
@@ -109,13 +112,15 @@ class FilmRollEditViewModelTest {
     fun `save persists the selected color type`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
         val gateway = FakeDataLayerGateway()
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("HP5 Plus — Roll 1")
         viewModel.setFilmStock("Ilford HP5 Plus")
         viewModel.setBoxSpeedIso("400")
-        viewModel.setTargetFrameCount("10")
+        viewModel.setFilmBack(back.id)
+        viewModel.setTargetFrameCount(10)
         viewModel.setColorType(FilmColorType.BLACK_AND_WHITE)
 
         viewModel.save()
@@ -128,13 +133,15 @@ class FilmRollEditViewModelTest {
     fun `editing an existing roll loads its color type`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
         val gateway = FakeDataLayerGateway()
         val createViewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
         createViewModel.uiState.first { !it.isLoading }
         createViewModel.setName("HP5 Plus — Roll 1")
         createViewModel.setFilmStock("Ilford HP5 Plus")
         createViewModel.setBoxSpeedIso("400")
-        createViewModel.setTargetFrameCount("10")
+        createViewModel.setFilmBack(back.id)
+        createViewModel.setTargetFrameCount(10)
         createViewModel.setColorType(FilmColorType.BLACK_AND_WHITE)
         createViewModel.save()
         val savedId = createViewModel.uiState.first { it.done }.let { repository.observeFilmRolls().first().single().id }
@@ -160,13 +167,15 @@ class FilmRollEditViewModelTest {
     fun `a roll is savable with no light meter selected`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
         seededLightMeter(repository)
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("Portra 400 — Roll 1")
         viewModel.setFilmStock("Kodak Portra 400")
         viewModel.setBoxSpeedIso("400")
-        viewModel.setTargetFrameCount("10")
+        viewModel.setFilmBack(back.id)
+        viewModel.setTargetFrameCount(10)
 
         assertTrue(viewModel.uiState.value.canSave)
     }
@@ -175,13 +184,15 @@ class FilmRollEditViewModelTest {
     fun `save persists the selected light meter`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
         val meter = seededLightMeter(repository)
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("Portra 400 — Roll 1")
         viewModel.setFilmStock("Kodak Portra 400")
         viewModel.setBoxSpeedIso("400")
-        viewModel.setTargetFrameCount("10")
+        viewModel.setFilmBack(back.id)
+        viewModel.setTargetFrameCount(10)
         viewModel.setLightMeter(meter.id)
 
         viewModel.save()
@@ -202,5 +213,59 @@ class FilmRollEditViewModelTest {
         viewModel.setLightMeter(null)
 
         assertNull(viewModel.uiState.value.lightMeterId)
+    }
+
+    @Test
+    fun `changing camera body clears a film back that no longer belongs to it`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededCameraBody(repository, id = "body-2")
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setFilmBack(back.id)
+        viewModel.setTargetFrameCount(10)
+
+        viewModel.setCameraBody("body-2")
+
+        assertNull(viewModel.uiState.value.filmBackId)
+        assertNull(viewModel.uiState.value.targetFrameCount)
+    }
+
+    @Test
+    fun `changing camera body keeps a film back that still belongs to it`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setFilmBack(back.id)
+        viewModel.setTargetFrameCount(10)
+
+        viewModel.setCameraBody("body-1")
+
+        assertEquals(back.id, viewModel.uiState.value.filmBackId)
+        assertEquals(10, viewModel.uiState.value.targetFrameCount)
+    }
+
+    @Test
+    fun `selecting a film back whose available counts don't include the current target frame count clears it`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val backA = seededFilmBack(repository, cameraBodyId = "body-1", id = "back-a")
+        val backB = FilmBack(
+            id = "back-b", name = "Other back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X6,
+            availableFrameCounts = listOf(12), createdAt = 0L, updatedAt = 0L,
+            syncStatus = SyncStatus.SYNCED, remoteId = null,
+        ).also { repository.saveFilmBack(it) }
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setFilmBack(backA.id)
+        viewModel.setTargetFrameCount(10)
+
+        viewModel.setFilmBack(backB.id)
+
+        assertEquals(backB.id, viewModel.uiState.value.filmBackId)
+        assertNull(viewModel.uiState.value.targetFrameCount)
     }
 }

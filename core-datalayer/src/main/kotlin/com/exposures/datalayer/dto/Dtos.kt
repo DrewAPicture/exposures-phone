@@ -72,6 +72,7 @@ data class FilmRollDto(
     val colorType: String = "COLOR",
     val cameraBodyId: String,
     val lightMeterId: String? = null,
+    val filmBackId: String,
     val targetFrameCount: Int,
     val status: String,
     val createdAt: Long,

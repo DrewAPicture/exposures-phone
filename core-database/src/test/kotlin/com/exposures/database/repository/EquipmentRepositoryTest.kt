@@ -101,7 +101,12 @@ class EquipmentRepositoryTest {
         remoteId = null,
     )
 
-    private fun filmRoll(id: String = UUID.randomUUID().toString(), cameraBodyId: String, lightMeterId: String? = null) = FilmRoll(
+    private fun filmRoll(
+        id: String = UUID.randomUUID().toString(),
+        cameraBodyId: String,
+        lightMeterId: String? = null,
+        filmBackId: String,
+    ) = FilmRoll(
         id = id,
         name = "Portra 400 — Roll 1",
         filmStock = "Kodak Portra 400",
@@ -110,6 +115,7 @@ class EquipmentRepositoryTest {
         colorType = FilmColorType.COLOR,
         cameraBodyId = cameraBodyId,
         lightMeterId = lightMeterId,
+        filmBackId = filmBackId,
         targetFrameCount = 10,
         status = RollStatus.AVAILABLE,
         createdAt = 0L,
@@ -216,7 +222,9 @@ class EquipmentRepositoryTest {
     fun `film roll CRUD round-trips`() = runTest {
         val body = cameraBody()
         repository.saveCameraBody(body)
-        val roll = filmRoll(cameraBodyId = body.id)
+        val back = filmBack(cameraBodyId = body.id)
+        repository.saveFilmBack(back)
+        val roll = filmRoll(cameraBodyId = body.id, filmBackId = back.id)
 
         repository.saveFilmRoll(roll)
 
@@ -229,11 +237,26 @@ class EquipmentRepositoryTest {
         repository.saveCameraBody(body)
         val meter = lightMeter()
         repository.saveLightMeter(meter)
-        val roll = filmRoll(cameraBodyId = body.id, lightMeterId = meter.id)
+        val back = filmBack(cameraBodyId = body.id)
+        repository.saveFilmBack(back)
+        val roll = filmRoll(cameraBodyId = body.id, lightMeterId = meter.id, filmBackId = back.id)
 
         repository.saveFilmRoll(roll)
 
         assertEquals(meter.id, repository.getFilmRoll(roll.id)?.lightMeterId)
+    }
+
+    @Test
+    fun `film roll CRUD round-trips with a film back assigned`() = runTest {
+        val body = cameraBody()
+        repository.saveCameraBody(body)
+        val back = filmBack(cameraBodyId = body.id)
+        repository.saveFilmBack(back)
+        val roll = filmRoll(cameraBodyId = body.id, filmBackId = back.id)
+
+        repository.saveFilmRoll(roll)
+
+        assertEquals(back.id, repository.getFilmRoll(roll.id)?.filmBackId)
     }
 
     @Test

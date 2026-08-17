@@ -57,6 +57,7 @@ class RequestRollsSyncHandlerTest {
         colorType = FilmColorType.COLOR,
         cameraBodyId = "body-1",
         lightMeterId = null,
+        filmBackId = "back-1",
         targetFrameCount = 10,
         status = RollStatus.AVAILABLE,
         createdAt = 0L,

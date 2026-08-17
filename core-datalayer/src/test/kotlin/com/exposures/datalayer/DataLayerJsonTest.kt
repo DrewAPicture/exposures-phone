@@ -54,7 +54,8 @@ class DataLayerJsonTest {
         val rolls = listOf(
             FilmRollDto(
                 id = "roll-1", name = "Portra 400", filmStock = "Kodak Portra 400", boxSpeedIso = 400,
-                format = "MEDIUM_FORMAT_120", colorType = "COLOR", cameraBodyId = "body-1", targetFrameCount = 10, status = "AVAILABLE",
+                format = "MEDIUM_FORMAT_120", colorType = "COLOR", cameraBodyId = "body-1", filmBackId = "back-1",
+                targetFrameCount = 10, status = "AVAILABLE",
                 createdAt = 0L, updatedAt = 0L,
             ),
         )
@@ -102,7 +103,7 @@ class DataLayerJsonTest {
 
     @Test
     fun `a roll payload from a writer built before colorType existed still decodes`() {
-        val json = """[{"id":"roll-1","name":"Portra 400","filmStock":"Kodak Portra 400","boxSpeedIso":400,"format":"MEDIUM_FORMAT_120","cameraBodyId":"body-1","targetFrameCount":10,"status":"AVAILABLE","createdAt":0,"updatedAt":0}]"""
+        val json = """[{"id":"roll-1","name":"Portra 400","filmStock":"Kodak Portra 400","boxSpeedIso":400,"format":"MEDIUM_FORMAT_120","cameraBodyId":"body-1","filmBackId":"back-1","targetFrameCount":10,"status":"AVAILABLE","createdAt":0,"updatedAt":0}]"""
 
         val decoded = DataLayerJson.decodeRolls(json)
 

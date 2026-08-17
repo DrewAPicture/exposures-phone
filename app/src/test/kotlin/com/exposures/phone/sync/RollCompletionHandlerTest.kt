@@ -4,6 +4,8 @@ import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerJson
 import com.exposures.datalayer.DataLayerPaths
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmBack
+import com.exposures.model.FilmBackType
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -34,6 +36,18 @@ class RollCompletionHandlerTest {
         remoteId = null,
     )
 
+    private fun filmBack(id: String = "back-1") = FilmBack(
+        id = id,
+        name = "6x7 back",
+        cameraBodyId = "body-1",
+        type = FilmBackType.ROLL_6X7,
+        availableFrameCounts = listOf(10),
+        createdAt = 0L,
+        updatedAt = 0L,
+        syncStatus = SyncStatus.SYNCED,
+        remoteId = null,
+    )
+
     private fun roll(id: String = "roll-1", status: RollStatus = RollStatus.AVAILABLE) = FilmRoll(
         id = id,
         name = "Portra 400 — Roll 1",
@@ -43,6 +57,7 @@ class RollCompletionHandlerTest {
         colorType = FilmColorType.COLOR,
         cameraBodyId = "body-1",
         lightMeterId = null,
+        filmBackId = "back-1",
         targetFrameCount = 10,
         status = status,
         createdAt = 0L,
@@ -58,6 +73,7 @@ class RollCompletionHandlerTest {
     fun `handle marks the roll completed`() = runTest {
         val repository = createTestRepository()
         repository.saveCameraBody(cameraBody())
+        repository.saveFilmBack(filmBack())
         repository.saveFilmRoll(roll())
         val gateway = FakeDataLayerGateway()
 
@@ -70,6 +86,7 @@ class RollCompletionHandlerTest {
     fun `handle re-pushes the roll list so the watch's mirror catches up`() = runTest {
         val repository = createTestRepository()
         repository.saveCameraBody(cameraBody())
+        repository.saveFilmBack(filmBack())
         repository.saveFilmRoll(roll())
         val gateway = FakeDataLayerGateway()
 
@@ -94,6 +111,7 @@ class RollCompletionHandlerTest {
     fun `handle only affects the targeted roll`() = runTest {
         val repository = createTestRepository()
         repository.saveCameraBody(cameraBody())
+        repository.saveFilmBack(filmBack())
         repository.saveFilmRoll(roll(id = "roll-1"))
         repository.saveFilmRoll(roll(id = "roll-2"))
         val gateway = FakeDataLayerGateway()

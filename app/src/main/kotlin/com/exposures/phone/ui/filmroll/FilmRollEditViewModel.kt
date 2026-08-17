@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.model.CameraBody
+import com.exposures.model.FilmBack
 import com.exposures.model.FilmColorType
 import com.exposures.model.FilmFormat
 import com.exposures.model.FilmRoll
@@ -23,6 +24,7 @@ data class FilmRollEditUiState(
     val isNew: Boolean = true,
     val availableCameraBodies: List<CameraBody> = emptyList(),
     val availableLightMeters: List<LightMeter> = emptyList(),
+    val availableFilmBacks: List<FilmBack> = emptyList(),
     val name: String = "",
     val filmStock: String = "",
     val boxSpeedIso: String = "",
@@ -30,7 +32,8 @@ data class FilmRollEditUiState(
     val colorType: FilmColorType = FilmColorType.COLOR,
     val cameraBodyId: String? = null,
     val lightMeterId: String? = null,
-    val targetFrameCount: String = "",
+    val filmBackId: String? = null,
+    val targetFrameCount: Int? = null,
     val done: Boolean = false,
 ) {
     val canSave: Boolean
@@ -38,7 +41,8 @@ data class FilmRollEditUiState(
             filmStock.isNotBlank() &&
             boxSpeedIso.toIntOrNull()?.let { it > 0 } == true &&
             cameraBodyId != null &&
-            targetFrameCount.toIntOrNull()?.let { it > 0 } == true
+            filmBackId != null &&
+            targetFrameCount != null
 }
 
 class FilmRollEditViewModel(
@@ -55,12 +59,14 @@ class FilmRollEditViewModel(
         viewModelScope.launch {
             val cameraBodies = repository.observeCameraBodies().first()
             val lightMeters = repository.observeLightMeters().first()
+            val filmBacks = repository.observeFilmBacks().first()
             val existing = existingId?.let { repository.getFilmRoll(it) }
             _uiState.value = if (existing == null) {
                 _uiState.value.copy(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
                     availableLightMeters = lightMeters,
+                    availableFilmBacks = filmBacks,
                     cameraBodyId = cameraBodies.firstOrNull()?.id,
                 )
             } else {
@@ -68,6 +74,7 @@ class FilmRollEditViewModel(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
                     availableLightMeters = lightMeters,
+                    availableFilmBacks = filmBacks,
                     name = existing.name,
                     filmStock = existing.filmStock,
                     boxSpeedIso = existing.boxSpeedIso.toString(),
@@ -75,7 +82,8 @@ class FilmRollEditViewModel(
                     colorType = existing.colorType,
                     cameraBodyId = existing.cameraBodyId,
                     lightMeterId = existing.lightMeterId,
-                    targetFrameCount = existing.targetFrameCount.toString(),
+                    filmBackId = existing.filmBackId,
+                    targetFrameCount = existing.targetFrameCount,
                 )
             }
         }
@@ -101,8 +109,16 @@ class FilmRollEditViewModel(
         _uiState.value = _uiState.value.copy(colorType = colorType)
     }
 
+    /** Backs are body-specific — a film back that no longer belongs to the new body can't stay selected. */
     fun setCameraBody(cameraBodyId: String) {
-        _uiState.value = _uiState.value.copy(cameraBodyId = cameraBodyId)
+        val state = _uiState.value
+        val selectedBack = state.availableFilmBacks.firstOrNull { it.id == state.filmBackId }
+        val backStillValid = selectedBack != null && selectedBack.cameraBodyId == cameraBodyId
+        _uiState.value = if (backStillValid) {
+            state.copy(cameraBodyId = cameraBodyId)
+        } else {
+            state.copy(cameraBodyId = cameraBodyId, filmBackId = null, targetFrameCount = null)
+        }
     }
 
     /** Null clears the roll's light meter — most rolls don't use a handheld meter at all. */
@@ -110,8 +126,20 @@ class FilmRollEditViewModel(
         _uiState.value = _uiState.value.copy(lightMeterId = lightMeterId)
     }
 
-    fun setTargetFrameCount(value: String) {
-        _uiState.value = _uiState.value.copy(targetFrameCount = value)
+    /** The target frame count is only meaningful for the newly-selected back's own declared counts. */
+    fun setFilmBack(filmBackId: String) {
+        val state = _uiState.value
+        val back = state.availableFilmBacks.firstOrNull { it.id == filmBackId }
+        val countStillValid = back != null && state.targetFrameCount in back.availableFrameCounts
+        _uiState.value = if (countStillValid) {
+            state.copy(filmBackId = filmBackId)
+        } else {
+            state.copy(filmBackId = filmBackId, targetFrameCount = null)
+        }
+    }
+
+    fun setTargetFrameCount(count: Int) {
+        _uiState.value = _uiState.value.copy(targetFrameCount = count)
     }
 
     fun save() {
@@ -129,7 +157,8 @@ class FilmRollEditViewModel(
                 colorType = state.colorType,
                 cameraBodyId = requireNotNull(state.cameraBodyId),
                 lightMeterId = state.lightMeterId,
-                targetFrameCount = requireNotNull(state.targetFrameCount.toIntOrNull()),
+                filmBackId = requireNotNull(state.filmBackId),
+                targetFrameCount = requireNotNull(state.targetFrameCount),
                 status = existing?.status ?: RollStatus.AVAILABLE,
                 createdAt = existing?.createdAt ?: now,
                 updatedAt = now,

@@ -1,4 +1,4 @@
-package com.exposures.phone.ui.home
+package com.exposures.phone.ui.settings
 
 import android.Manifest
 import android.content.Context
@@ -16,6 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 /**
  * Capture needs Camera + Notifications granted, and ideally the battery-optimization exemption so
@@ -33,22 +37,43 @@ import androidx.core.content.ContextCompat
 @Composable
 fun PermissionsCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var cameraGranted by remember { mutableStateOf(hasPermission(context, Manifest.permission.CAMERA)) }
     var notificationsGranted by remember { mutableStateOf(hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)) }
     var locationGranted by remember { mutableStateOf(hasPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)) }
     var batteryExempted by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-        cameraGranted = results[Manifest.permission.CAMERA] ?: cameraGranted
-        notificationsGranted = results[Manifest.permission.POST_NOTIFICATIONS] ?: notificationsGranted
-        locationGranted = results[Manifest.permission.ACCESS_FINE_LOCATION] ?: locationGranted
-    }
-    val batteryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    fun refreshPermissionState() {
+        cameraGranted = hasPermission(context, Manifest.permission.CAMERA)
+        notificationsGranted = hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+        locationGranted = hasPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         batteryExempted = isIgnoringBatteryOptimizations(context)
     }
 
-    Card(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshPermissionState()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        refreshPermissionState()
+    }
+    val batteryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        refreshPermissionState()
+    }
+
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             Text("Capture requires:")
             PermissionRow("Camera", cameraGranted)
             PermissionRow("Notifications", notificationsGranted)

@@ -17,6 +17,7 @@ import com.exposures.phone.ui.lens.LensEditScreen
 import com.exposures.phone.ui.lens.LensListScreen
 import com.exposures.phone.ui.lightmeter.LightMeterEditScreen
 import com.exposures.phone.ui.lightmeter.LightMeterListScreen
+import com.exposures.phone.ui.settings.SettingsScreen
 
 @Composable
 fun ExposuresNavHost() {
@@ -30,12 +31,16 @@ fun ExposuresNavHost() {
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
             HomeScreen(
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenCameraBodies = { navController.navigate(Routes.CAMERA_BODY_LIST) },
                 onOpenLenses = { navController.navigate(Routes.LENS_LIST) },
                 onOpenLightMeters = { navController.navigate(Routes.LIGHT_METER_LIST) },
                 onOpenFilmBacks = { navController.navigate(Routes.FILM_BACK_LIST) },
                 onOpenFilmRolls = { navController.navigate(Routes.FILM_ROLL_LIST) },
             )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen()
         }
 
         composable(Routes.CAMERA_BODY_LIST) {

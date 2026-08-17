@@ -2,6 +2,7 @@ package com.exposures.phone.ui
 
 object Routes {
     const val HOME = "home"
+    const val SETTINGS = "settings"
 
     const val CAMERA_BODY_LIST = "cameraBodyList"
     const val CAMERA_BODY_EDIT = "cameraBodyEdit?id={id}"

@@ -33,7 +33,7 @@ class ExposuresViewModelFactory(
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = when (modelClass) {
-        HomeViewModel::class.java -> HomeViewModel(repository)
+        HomeViewModel::class.java -> HomeViewModel(repository, dataLayerGateway)
         SettingsViewModel::class.java ->
             SettingsViewModel(
                 repository,

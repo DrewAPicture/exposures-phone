@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Android build
-        uses: DrewAPicture/exposures-common/.github/actions/setup-android-build@2fe940dfc68c696a8507a104390d3a27aebabb76 # exposures-common@2fe940d (2026-08-18)
+        uses: DrewAPicture/exposures-common/.github/actions/setup-android-build@a01672190a84cc1c48958912b87f253e58cc5898 # v0.1.1
 
       - name: Run tests
         run: ./gradlew test

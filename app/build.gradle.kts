@@ -39,9 +39,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":core-model"))
+    implementation(libs.exposures.common.core.model)
     implementation(project(":core-database"))
-    implementation(project(":core-datalayer"))
+    implementation(libs.exposures.common.core.datalayer)
     implementation(project(":core-sync"))
 
     implementation(platform(libs.compose.bom))

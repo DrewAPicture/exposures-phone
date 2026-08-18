@@ -1,93 +1,15 @@
+@file:JvmName("AppMappersKt")
+
 package com.exposures.database.mapper
 
-import com.exposures.database.entity.CameraBodyEntity
 import com.exposures.database.entity.ExposureEntity
 import com.exposures.database.entity.FilmBackEntity
 import com.exposures.database.entity.FilmRollEntity
-import com.exposures.database.entity.LensEntity
-import com.exposures.database.entity.LightMeterEntity
 import com.exposures.database.entity.ReferencePhotoEntity
-import com.exposures.model.CameraBody
 import com.exposures.model.Exposure
 import com.exposures.model.FilmBack
 import com.exposures.model.FilmRoll
-import com.exposures.model.Lens
-import com.exposures.model.LightMeter
 import com.exposures.model.ReferencePhoto
-
-fun CameraBodyEntity.toDomain() = CameraBody(
-    id = id,
-    name = name,
-    manufacturer = manufacturer,
-    availableShutterSpeeds = availableShutterSpeeds,
-    hasBulbMode = hasBulbMode,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    syncStatus = syncStatus,
-    remoteId = remoteId,
-)
-
-fun CameraBody.toEntity() = CameraBodyEntity(
-    id = id,
-    name = name,
-    manufacturer = manufacturer,
-    availableShutterSpeeds = availableShutterSpeeds,
-    hasBulbMode = hasBulbMode,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    syncStatus = syncStatus,
-    remoteId = remoteId,
-)
-
-fun LensEntity.toDomain() = Lens(
-    id = id,
-    name = name,
-    cameraBodyId = cameraBodyId,
-    minAperture = minAperture,
-    maxAperture = maxAperture,
-    stopIncrement = stopIncrement,
-    referencePhotoZoomRatio = referencePhotoZoomRatio,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    syncStatus = syncStatus,
-    remoteId = remoteId,
-)
-
-fun Lens.toEntity() = LensEntity(
-    id = id,
-    name = name,
-    cameraBodyId = cameraBodyId,
-    minAperture = minAperture,
-    maxAperture = maxAperture,
-    stopIncrement = stopIncrement,
-    referencePhotoZoomRatio = referencePhotoZoomRatio,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    syncStatus = syncStatus,
-    remoteId = remoteId,
-)
-
-fun LightMeterEntity.toDomain() = LightMeter(
-    id = id,
-    name = name,
-    manufacturer = manufacturer,
-    type = type,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    syncStatus = syncStatus,
-    remoteId = remoteId,
-)
-
-fun LightMeter.toEntity() = LightMeterEntity(
-    id = id,
-    name = name,
-    manufacturer = manufacturer,
-    type = type,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-    syncStatus = syncStatus,
-    remoteId = remoteId,
-)
 
 fun FilmBackEntity.toDomain() = FilmBack(
     id = id,

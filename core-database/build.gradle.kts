@@ -26,6 +26,7 @@ android {
 
 dependencies {
     implementation(libs.exposures.common.core.model)
+    implementation(libs.exposures.common.core.database.common)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

@@ -30,3 +30,16 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Safety gate from exp-shared-library-feasibility-plan.md: phone and watch must pin the
+      # same exposures-common version, since they share Data Layer DTOs/paths at runtime — a
+      # mismatch here is exactly the drift this whole extraction exists to prevent.
+      - name: Verify exposures-common version matches exposures-watch
+        run: |
+          this_version=$(grep '^exposuresCommon = ' gradle/libs.versions.toml | sed -E 's/.*"(.*)".*/\1/')
+          other_version=$(curl -fsSL https://raw.githubusercontent.com/DrewAPicture/exposures-watch/main/gradle/libs.versions.toml | grep '^exposuresCommon = ' | sed -E 's/.*"(.*)".*/\1/')
+          echo "phone pins exposures-common $this_version; watch pins $other_version"
+          if [ "$this_version" != "$other_version" ]; then
+            echo "::error::exposures-common version drift: phone=$this_version watch=$other_version"
+            exit 1
+          fi

@@ -54,30 +54,32 @@ fun CameraBodyEditScreen(id: String?, onDone: () -> Unit) {
             DropdownField(
                 label = "Fastest shutter speed",
                 value = state.fastestShutterSpeed,
-                options = ShutterSpeed.STANDARD_FULL_STOPS,
-                optionLabel = ShutterSpeed::label,
+                options = ShutterSpeed.STANDARD_FULL_STOPS + listOf(null),
+                optionLabel = { it?.label ?: "Other" },
                 onValueChange = viewModel::setFastestShutterSpeed,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
+            if (state.fastestShutterSpeed == null) {
+                OutlinedTextField(
+                    value = state.otherFastShutterSpeedDenominator,
+                    onValueChange = viewModel::setOtherFastShutterSpeedDenominator,
+                    label = { Text("Fastest shutter speed (denominator)") },
+                    supportingText = {
+                        Text(
+                            "For a body whose fastest speed doesn't land on a standard stop — e.g. a " +
+                                "leaf shutter topping out at 1/400. Enter just the denominator (400).",
+                        )
+                    },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+            }
             DropdownField(
                 label = "Slowest shutter speed",
                 value = state.slowestShutterSpeed,
                 options = ShutterSpeed.STANDARD_FULL_STOPS,
                 optionLabel = ShutterSpeed::label,
                 onValueChange = viewModel::setSlowestShutterSpeed,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
-            OutlinedTextField(
-                value = state.otherFastShutterSpeedDenominator,
-                onValueChange = viewModel::setOtherFastShutterSpeedDenominator,
-                label = { Text("Other fast shutter speed (optional)") },
-                supportingText = {
-                    Text(
-                        "For a body whose fastest speed doesn't land on a standard stop — e.g. a " +
-                            "leaf shutter topping out at 1/400. Enter just the denominator (400).",
-                    )
-                },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             Row(

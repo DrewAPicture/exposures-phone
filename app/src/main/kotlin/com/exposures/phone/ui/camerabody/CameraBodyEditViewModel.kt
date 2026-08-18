@@ -19,21 +19,26 @@ data class CameraBodyEditUiState(
     val isNew: Boolean = true,
     val name: String = "",
     val manufacturer: String = "",
-    val fastestShutterSpeed: ShutterSpeed = ShutterSpeed.STANDARD_FULL_STOPS.first(),
+    /** Null selects the "Other" option — a fastest speed that doesn't land on a standard stop
+     * (e.g. a leaf shutter topping out at 1/400), entered via [otherFastShutterSpeedDenominator]
+     * instead. The two are mutually exclusive by construction: a standard stop is never combined
+     * with a custom one, so a body can't end up with an unreachable "fastest" left over from
+     * before a custom speed was set. See [ShutterSpeed.standardRange]. */
+    val fastestShutterSpeed: ShutterSpeed? = ShutterSpeed.STANDARD_FULL_STOPS.first(),
     val slowestShutterSpeed: ShutterSpeed = ShutterSpeed.STANDARD_FULL_STOPS.last(),
-    /** An extra fast shutter speed (as a fraction denominator) outside the standard stops — e.g. a
-     * leaf shutter topping out at 1/400. Blank means none. See [ShutterSpeed.standardRange]. */
     val otherFastShutterSpeedDenominator: String = "",
     val hasBulbMode: Boolean = true,
     val done: Boolean = false,
 ) {
-    private val otherShutterSpeedValid: Boolean
-        get() = otherFastShutterSpeedDenominator.isBlank() ||
-            otherFastShutterSpeedDenominator.toIntOrNull()?.let { it > 0 } == true
+    private val otherShutterSpeed: ShutterSpeed?
+        get() = otherFastShutterSpeedDenominator.toIntOrNull()?.takeIf { it > 0 }?.let(ShutterSpeed::fraction)
 
     val canSave: Boolean
         get() = name.isNotBlank() && manufacturer.isNotBlank() &&
-            fastestShutterSpeed <= slowestShutterSpeed && otherShutterSpeedValid
+            when (val fastest = fastestShutterSpeed) {
+                null -> otherShutterSpeed?.let { it <= slowestShutterSpeed } == true
+                else -> fastest <= slowestShutterSpeed
+            }
 }
 
 class CameraBodyEditViewModel(
@@ -64,7 +69,11 @@ class CameraBodyEditViewModel(
                         isLoading = false,
                         name = body.name,
                         manufacturer = body.manufacturer,
-                        fastestShutterSpeed = standardSpeeds.minOrNull() ?: ShutterSpeed.STANDARD_FULL_STOPS.first(),
+                        fastestShutterSpeed = if (otherSpeed != null) {
+                            null
+                        } else {
+                            standardSpeeds.minOrNull() ?: ShutterSpeed.STANDARD_FULL_STOPS.first()
+                        },
                         slowestShutterSpeed = standardSpeeds.maxOrNull() ?: ShutterSpeed.STANDARD_FULL_STOPS.last(),
                         otherFastShutterSpeedDenominator = otherSpeed
                             ?.takeIf { it.kind == ShutterSpeedKind.FRACTION }
@@ -84,7 +93,7 @@ class CameraBodyEditViewModel(
         _uiState.value = _uiState.value.copy(manufacturer = manufacturer)
     }
 
-    fun setFastestShutterSpeed(speed: ShutterSpeed) {
+    fun setFastestShutterSpeed(speed: ShutterSpeed?) {
         _uiState.value = _uiState.value.copy(fastestShutterSpeed = speed)
     }
 
@@ -106,14 +115,24 @@ class CameraBodyEditViewModel(
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val existing = repository.getCameraBody(id)
-            val standardSpeeds = ShutterSpeed.standardRange(
-                fastest = state.fastestShutterSpeed,
-                slowest = state.slowestShutterSpeed,
-                includeBulb = state.hasBulbMode,
-            )
+            // "Other" (fastestShutterSpeed == null) and a standard fastest stop are mutually
+            // exclusive selections in the UI, so whichever one is active becomes the actual
+            // fastest bound passed to standardRange() — there's no separate union step, so an
+            // unreachable standard stop faster than a custom speed can never end up in the saved
+            // list. See the field's doc comment on CameraBodyEditUiState.
+            // Only read the "Other" text field when it's the active selection — otherwise stale
+            // leftover text from a prior "Other" selection (now switched back to a standard stop)
+            // would get silently reunioned into the saved list.
             val otherSpeed = state.otherFastShutterSpeedDenominator.toIntOrNull()
                 ?.takeIf { it > 0 }
                 ?.let(ShutterSpeed::fraction)
+                ?.takeIf { state.fastestShutterSpeed == null }
+            val effectiveFastest = state.fastestShutterSpeed ?: requireNotNull(otherSpeed)
+            val standardSpeeds = ShutterSpeed.standardRange(
+                fastest = effectiveFastest,
+                slowest = state.slowestShutterSpeed,
+                includeBulb = state.hasBulbMode,
+            )
             val body = CameraBody(
                 id = id,
                 name = state.name,

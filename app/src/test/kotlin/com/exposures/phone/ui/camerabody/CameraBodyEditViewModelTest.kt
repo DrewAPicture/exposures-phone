@@ -77,57 +77,43 @@ class CameraBodyEditViewModelTest {
     }
 
     @Test
-    fun `an other fast shutter speed outside the standard stops is included when saved`() = runTest {
+    fun `selecting Other for fastest speed replaces the standard bound entirely`() = runTest {
         val (viewModel, repository, _) = newViewModel()
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("RZ67 Pro II")
         viewModel.setManufacturer("Mamiya")
-        viewModel.setFastestShutterSpeed(ShutterSpeed.fraction(250))
-        viewModel.setSlowestShutterSpeed(ShutterSpeed.wholeSeconds(8))
+        // Simulates a real user flow: a standard fastest was picked first, then the dropdown was
+        // switched to "Other" — the two are mutually exclusive, so the earlier standard pick must
+        // not survive into the saved list once "Other" takes over.
+        viewModel.setFastestShutterSpeed(ShutterSpeed.fraction(500))
+        viewModel.setFastestShutterSpeed(null)
         viewModel.setOtherFastShutterSpeedDenominator("400")
+        viewModel.setSlowestShutterSpeed(ShutterSpeed.wholeSeconds(8))
 
         viewModel.save()
 
         val saved = repository.observeCameraBodies().first { it.isNotEmpty() }.single()
         assertTrue(ShutterSpeed.fraction(400) in saved.availableShutterSpeeds)
+        assertFalse(ShutterSpeed.fraction(500) in saved.availableShutterSpeeds)
+        assertEquals(ShutterSpeed.fraction(400), saved.availableShutterSpeeds.first())
     }
 
     @Test
-    fun `cannot save with a non-numeric other shutter speed`() = runTest {
-        val (viewModel, _, _) = newViewModel()
-        viewModel.uiState.first { !it.isLoading }
-        viewModel.setName("RZ67 Pro II")
-        viewModel.setManufacturer("Mamiya")
-
-        viewModel.setOtherFastShutterSpeedDenominator("not a number")
-
-        assertFalse(viewModel.uiState.value.canSave)
-    }
-
-    @Test
-    fun `cannot save with a zero or negative other shutter speed`() = runTest {
-        val (viewModel, _, _) = newViewModel()
-        viewModel.uiState.first { !it.isLoading }
-        viewModel.setName("RZ67 Pro II")
-        viewModel.setManufacturer("Mamiya")
-
-        viewModel.setOtherFastShutterSpeedDenominator("0")
-
-        assertFalse(viewModel.uiState.value.canSave)
-    }
-
-    @Test
-    fun `a blank other shutter speed is valid and adds nothing extra`() = runTest {
+    fun `switching back to a standard fastest ignores stale Other text`() = runTest {
         val (viewModel, repository, _) = newViewModel()
         viewModel.uiState.first { !it.isLoading }
         viewModel.setName("RZ67 Pro II")
         viewModel.setManufacturer("Mamiya")
+        viewModel.setFastestShutterSpeed(null)
+        viewModel.setOtherFastShutterSpeedDenominator("400")
+        // Switch back to a standard fastest without clearing the (now inactive) Other field.
         viewModel.setFastestShutterSpeed(ShutterSpeed.fraction(250))
         viewModel.setSlowestShutterSpeed(ShutterSpeed.wholeSeconds(8))
 
         viewModel.save()
 
         val saved = repository.observeCameraBodies().first { it.isNotEmpty() }.single()
+        assertFalse(ShutterSpeed.fraction(400) in saved.availableShutterSpeeds)
         assertEquals(
             ShutterSpeed.standardRange(ShutterSpeed.fraction(250), ShutterSpeed.wholeSeconds(8), includeBulb = true),
             saved.availableShutterSpeeds,
@@ -135,22 +121,60 @@ class CameraBodyEditViewModelTest {
     }
 
     @Test
-    fun `editing a body with an other shutter speed loads it separately from the standard bounds`() = runTest {
+    fun `cannot save Other with non-numeric text`() = runTest {
+        val (viewModel, _, _) = newViewModel()
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("RZ67 Pro II")
+        viewModel.setManufacturer("Mamiya")
+        viewModel.setFastestShutterSpeed(null)
+
+        viewModel.setOtherFastShutterSpeedDenominator("not a number")
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `cannot save Other with a zero or negative denominator`() = runTest {
+        val (viewModel, _, _) = newViewModel()
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("RZ67 Pro II")
+        viewModel.setManufacturer("Mamiya")
+        viewModel.setFastestShutterSpeed(null)
+
+        viewModel.setOtherFastShutterSpeedDenominator("0")
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `cannot save with Other selected but left blank`() = runTest {
+        val (viewModel, _, _) = newViewModel()
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("RZ67 Pro II")
+        viewModel.setManufacturer("Mamiya")
+
+        viewModel.setFastestShutterSpeed(null)
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `editing a body saved with Other reloads it as the selected fastest option`() = runTest {
         val repository = createTestRepository()
         val gateway = FakeDataLayerGateway()
         val (createViewModel, _, _) = newViewModel(repository, gateway)
         createViewModel.setName("RZ67 Pro II")
         createViewModel.setManufacturer("Mamiya")
-        createViewModel.setFastestShutterSpeed(ShutterSpeed.fraction(250))
-        createViewModel.setSlowestShutterSpeed(ShutterSpeed.wholeSeconds(8))
+        createViewModel.setFastestShutterSpeed(null)
         createViewModel.setOtherFastShutterSpeedDenominator("400")
+        createViewModel.setSlowestShutterSpeed(ShutterSpeed.wholeSeconds(8))
         createViewModel.save()
         val savedId = createViewModel.uiState.first { it.done }.let { repository.observeCameraBodies().first().single().id }
 
         val (editViewModel, _, _) = newViewModel(repository, gateway, existingId = savedId)
 
         val state = editViewModel.uiState.first { !it.isLoading }
-        assertEquals(ShutterSpeed.fraction(250), state.fastestShutterSpeed)
+        assertEquals(null, state.fastestShutterSpeed)
         assertEquals(ShutterSpeed.wholeSeconds(8), state.slowestShutterSpeed)
         assertEquals("400", state.otherFastShutterSpeedDenominator)
     }

@@ -14,7 +14,7 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
 
     override suspend fun doWork(): Result {
         val container = (applicationContext as ExposuresApplication).container
-        val coordinator = UploadCoordinator(container.repository, container.syncApi)
+        val coordinator = UploadCoordinator(container.repository, container.syncApi, applicationContext)
         val result = coordinator.drainAll()
         return if (result.failed == 0) Result.success() else Result.retry()
     }

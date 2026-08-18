@@ -5,13 +5,16 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -99,21 +102,16 @@ class CaptureForegroundService : LifecycleService() {
                 camera.cameraControl.setZoomRatio(zoom).await()
             }
 
-            val outputFile = CaptureFileNaming.outputFile(
-                baseDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir,
-                filmRollId = exposure.filmRollId,
-                exposureId = exposureId,
-            )
-            outputFile.parentFile?.mkdirs()
-
-            takePicture(imageCapture, outputFile)
+            val destination = createCaptureDestination(exposure.filmRollId, exposureId)
+            val savedUri = takePicture(imageCapture, destination.outputOptions)
+            val localUri = savedUri?.toString() ?: destination.fallbackLocalUri
 
             val location = lastKnownLocationOrNull()
             container.repository.saveReferencePhoto(
                 ReferencePhoto(
                     id = UUID.randomUUID().toString(),
                     exposureId = exposureId,
-                    localUri = outputFile.toURI().toString(),
+                    localUri = localUri,
                     remoteUrl = null,
                     latitude = location?.latitude,
                     longitude = location?.longitude,
@@ -159,15 +157,51 @@ class CaptureForegroundService : LifecycleService() {
         return null
     }
 
-    private suspend fun takePicture(imageCapture: ImageCapture, outputFile: File) {
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
-        suspendCancellableCoroutine { continuation ->
+    /**
+     * On API 29+ (Q), saves into the shared Pictures/Exposures/&lt;filmRollId&gt; gallery folder via
+     * MediaStore — visible in the system Photos app, no storage permission needed since the app
+     * only ever reads/writes entries it created itself. Below Q, MediaStore's RELATIVE_PATH insert
+     * API isn't available, so this falls back to app-private external storage instead (a real file,
+     * not shared with the gallery) — [CaptureDestination.fallbackLocalUri] is only populated in
+     * that case, since the Q+ path always gets its saved location back from [takePicture].
+     */
+    private fun createCaptureDestination(filmRollId: String, exposureId: String): CaptureDestination {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "$exposureId.jpg")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Exposures/$filmRollId")
+            }
+            return CaptureDestination(
+                outputOptions = ImageCapture.OutputFileOptions.Builder(
+                    contentResolver,
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    values,
+                ).build(),
+                fallbackLocalUri = null,
+            )
+        }
+
+        val file = CaptureFileNaming.outputFile(
+            baseDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: filesDir,
+            filmRollId = filmRollId,
+            exposureId = exposureId,
+        )
+        file.parentFile?.mkdirs()
+        return CaptureDestination(
+            outputOptions = ImageCapture.OutputFileOptions.Builder(file).build(),
+            fallbackLocalUri = file.toURI().toString(),
+        )
+    }
+
+    private suspend fun takePicture(imageCapture: ImageCapture, outputOptions: ImageCapture.OutputFileOptions): Uri? {
+        return suspendCancellableCoroutine { continuation ->
             imageCapture.takePicture(
                 outputOptions,
                 ContextCompat.getMainExecutor(this),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                        continuation.resume(Unit)
+                        continuation.resume(outputFileResults.savedUri)
                     }
 
                     override fun onError(exception: ImageCaptureException) {
@@ -226,3 +260,8 @@ class CaptureForegroundService : LifecycleService() {
         private const val EXPOSURE_LOOKUP_INTERVAL_MS = 300L
     }
 }
+
+private data class CaptureDestination(
+    val outputOptions: ImageCapture.OutputFileOptions,
+    val fallbackLocalUri: String?,
+)

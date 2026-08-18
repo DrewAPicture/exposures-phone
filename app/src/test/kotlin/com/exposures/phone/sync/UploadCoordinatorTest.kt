@@ -1,11 +1,15 @@
 package com.exposures.phone.sync
 
+import android.content.Context
+import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
 import com.exposures.model.Exposure
 import com.exposures.model.PhotoStatus
 import com.exposures.model.ReferencePhoto
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.SyncStatus
 import com.exposures.phone.createTestRepository
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.flow.first
@@ -15,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class UploadCoordinatorTest {
@@ -41,6 +46,19 @@ class UploadCoordinatorTest {
         id = UUID.randomUUID().toString(),
         exposureId = exposureId,
         localUri = localFile?.toURI()?.toString(),
+        remoteUrl = null,
+        latitude = null,
+        longitude = null,
+        capturedAt = 1L,
+        uploadStatus = SyncStatus.PENDING_SYNC,
+        retryCount = 0,
+        lastError = null,
+    )
+
+    private fun referencePhotoWithUri(exposureId: String, uri: Uri) = ReferencePhoto(
+        id = UUID.randomUUID().toString(),
+        exposureId = exposureId,
+        localUri = uri.toString(),
         remoteUrl = null,
         latitude = null,
         longitude = null,
@@ -110,6 +128,23 @@ class UploadCoordinatorTest {
         assertEquals(SyncStatus.SYNCED, stored.uploadStatus)
         assertEquals("https://cdn.example/exp-1.jpg", stored.remoteUrl)
         file.delete()
+    }
+
+    @Test
+    fun `drainReferencePhotos uploads a photo behind a content Uri, reading bytes via the content resolver`() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val uri = Uri.parse("content://media/external/images/media/1")
+        shadowOf(context.contentResolver).registerInputStream(uri, ByteArrayInputStream(byteArrayOf(1, 2, 3)))
+        val repository = createTestRepository()
+        repository.saveReferencePhoto(referencePhotoWithUri("exp-1", uri))
+        val syncApi = FakeSyncApi()
+        val coordinator = UploadCoordinator(repository, syncApi, context)
+
+        val result = coordinator.drainReferencePhotos()
+
+        assertEquals(1, result.succeeded)
+        assertEquals(listOf("exp-1"), syncApi.uploadedPhotoExposureIds)
+        assertEquals(SyncStatus.SYNCED, repository.getReferencePhoto("exp-1")!!.uploadStatus)
     }
 
     @Test

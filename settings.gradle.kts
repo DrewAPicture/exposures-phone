@@ -11,21 +11,25 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Phase 5 of exp-shared-library-feasibility-plan.md: core-model/core-datalayer are
+        // resolved as real published artifacts (com.exposures.common, pinned in
+        // gradle/libs.versions.toml) rather than composite-build substitution (Phase 3/4).
+        // Credentials: GITHUB_ACTOR/GITHUB_TOKEN env vars (CI, see .github/workflows/ci.yml) or
+        // gpr.user/gpr.token Gradle project properties (local — e.g. ~/.gradle/gradle.properties,
+        // never committed). GitHub Packages requires authentication to read Maven artifacts even
+        // on a public repo.
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/DrewAPicture/exposures-common")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: providers.gradleProperty("gpr.user").orNull
+                password = System.getenv("GITHUB_TOKEN") ?: providers.gradleProperty("gpr.token").orNull
+            }
+        }
     }
 }
 
 rootProject.name = "exposures-phone"
-
-// Phase 4 of exp-shared-library-feasibility-plan.md: core-model/core-datalayer are consumed
-// exclusively from exposures-common via composite build — the local duplicate modules this
-// substituted for (kept through Phase 3 as a rollback path) are deleted. To roll back, check out
-// the pre-Phase-4 commit rather than repointing a dependency.
-includeBuild("../common") {
-    dependencySubstitution {
-        substitute(module("com.exposures.common:core-model")).using(project(":core-model"))
-        substitute(module("com.exposures.common:core-datalayer")).using(project(":core-datalayer"))
-    }
-}
 
 include(":core-database")
 include(":core-sync")

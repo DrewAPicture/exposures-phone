@@ -21,6 +21,8 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Includes OpenApiSpecDriftTest, which regenerates docs/openapi/sync-api.json from
+        # SyncApi/DTO source and fails if the checked-in spec drifted.
 
       # Safety gate from exp-shared-library-feasibility-plan.md: phone and watch must pin the
       # same exposures-common version, since they share Data Layer DTOs/paths at runtime — a

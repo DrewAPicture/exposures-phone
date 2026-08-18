@@ -16,3 +16,10 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
 }
+
+tasks.withType<Test>().configureEach {
+    systemProperty("sync.openapi.spec", rootProject.file("docs/openapi/sync-api.json").absolutePath)
+    if (project.hasProperty("updateOpenApiSpec")) {
+        systemProperty("updateOpenApiSpec", "true")
+    }
+}

@@ -1,0 +1,200 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Exposures phone HTTP sync API",
+    "description": "Client-side contract against the not-yet-built backend, derived from SyncApi and core-sync DTOs. Independent of the Wear Data Layer contract. Regenerate with ./gradlew :core-sync:test -PupdateOpenApiSpec",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/exposures": {
+      "post": {
+        "operationId": "uploadExposure",
+        "summary": "Upload a captured exposure",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExposureSyncDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncAckDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/exposures/{exposureId}/reference-photo": {
+      "post": {
+        "operationId": "uploadReferencePhoto",
+        "summary": "Upload the reference photo for an exposure",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferencePhotoAckDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Optional. AuthProvider.authHeader() value; omitted when the no-op provider is used."
+      }
+    },
+    "schemas": {
+      "ShutterSpeedSyncDto": {
+        "type": "object",
+        "required": [
+          "kind",
+          "numerator",
+          "denominator"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "numerator": {
+            "type": "integer"
+          },
+          "denominator": {
+            "type": "integer"
+          }
+        }
+      },
+      "ExposureSyncDto": {
+        "type": "object",
+        "required": [
+          "id",
+          "filmRollId",
+          "frameNumber",
+          "lensId",
+          "shutterSpeed",
+          "aperture",
+          "isoUsed",
+          "capturedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "filmRollId": {
+            "type": "string"
+          },
+          "frameNumber": {
+            "type": "integer"
+          },
+          "lensId": {
+            "type": "string"
+          },
+          "shutterSpeed": {
+            "$ref": "#/components/schemas/ShutterSpeedSyncDto"
+          },
+          "aperture": {
+            "type": "number"
+          },
+          "isoUsed": {
+            "type": "integer"
+          },
+          "zone": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "capturedAt": {
+            "type": "integer"
+          }
+        }
+      },
+      "SyncAckDto": {
+        "type": "object",
+        "required": [
+          "remoteId"
+        ],
+        "properties": {
+          "remoteId": {
+            "type": "string"
+          }
+        }
+      },
+      "ReferencePhotoAckDto": {
+        "type": "object",
+        "required": [
+          "remoteUrl"
+        ],
+        "properties": {
+          "remoteUrl": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

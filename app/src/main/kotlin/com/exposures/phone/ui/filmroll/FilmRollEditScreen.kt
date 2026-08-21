@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -27,7 +28,14 @@ import com.exposures.phone.ui.components.DropdownField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
+fun FilmRollEditScreen(
+    id: String?,
+    onDone: () -> Unit,
+    onAddCameraBody: () -> Unit,
+    onAddFilmBack: (cameraBodyId: String?) -> Unit,
+    createdCameraBodyId: State<String?>,
+    createdFilmBackId: State<String?>,
+) {
     val container = appContainer()
     val viewModel: FilmRollEditViewModel = viewModel(
         factory = ExposuresViewModelFactory(container.repository, container.syncPusher, container.dataLayerClient, entityId = id),
@@ -35,6 +43,10 @@ fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
     val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(state.done) { if (state.done) onDone() }
+    val newCameraBodyId by createdCameraBodyId
+    LaunchedEffect(newCameraBodyId) { newCameraBodyId?.let { viewModel.setCameraBody(it) } }
+    val newFilmBackId by createdFilmBackId
+    LaunchedEffect(newFilmBackId) { newFilmBackId?.let { viewModel.setFilmBack(it) } }
 
     Scaffold(topBar = { TopAppBar(title = { Text(if (state.isNew) "New Film Roll" else "Edit Film Roll") }) }) { padding ->
         Column(modifier = Modifier.fillMaxWidth().padding(padding).padding(16.dp)) {
@@ -78,6 +90,10 @@ fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
                     "Add a camera body first — a roll needs one.",
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                Button(
+                    onClick = onAddCameraBody,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text("Add camera body") }
             } else {
                 DropdownField(
                     label = "Camera body",
@@ -105,6 +121,10 @@ fun FilmRollEditScreen(id: String?, onDone: () -> Unit) {
                     "Add a film back for this camera body first — a roll needs one.",
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                Button(
+                    onClick = { onAddFilmBack(state.cameraBodyId) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text("Add film back") }
             } else {
                 DropdownField(
                     label = "Film back",

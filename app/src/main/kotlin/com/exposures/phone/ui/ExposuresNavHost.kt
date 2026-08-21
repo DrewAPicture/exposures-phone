@@ -119,6 +119,10 @@ fun ExposuresNavHost() {
             FilmRollEditScreen(
                 id = backStackEntry.arguments?.getString(Routes.ARG_ID),
                 onDone = { navController.popBackStack() },
+                onAddCameraBody = { navController.navigate(Routes.cameraBodyEdit()) },
+                onAddFilmBack = { cameraBodyId -> navController.navigate(Routes.filmBackEdit(cameraBodyId = cameraBodyId)) },
+                createdCameraBodyId = backStackEntry.savedStateHandle.consumeResult(Routes.RESULT_CAMERA_BODY_ID),
+                createdFilmBackId = backStackEntry.savedStateHandle.consumeResult(Routes.RESULT_FILM_BACK_ID),
             )
         }
     }

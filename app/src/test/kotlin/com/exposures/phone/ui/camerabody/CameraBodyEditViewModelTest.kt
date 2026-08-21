@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -207,5 +208,36 @@ class CameraBodyEditViewModelTest {
 
         assertTrue(repository.observeCameraBodies().first().isEmpty())
         assertTrue(gateway.putPayloads.isEmpty())
+    }
+
+    @Test
+    fun `save exposes the new body's id as savedId`() = runTest {
+        val (viewModel, repository, _) = newViewModel()
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("RZ67 Pro II")
+        viewModel.setManufacturer("Mamiya")
+
+        viewModel.save()
+
+        val state = viewModel.uiState.first { it.done }
+        assertEquals(repository.observeCameraBodies().first().single().id, state.savedId)
+    }
+
+    @Test
+    fun `delete never sets savedId`() = runTest {
+        val repository = createTestRepository()
+        val gateway = FakeDataLayerGateway()
+        val (createViewModel, _, _) = newViewModel(repository, gateway)
+        createViewModel.setName("RZ67 Pro II")
+        createViewModel.setManufacturer("Mamiya")
+        createViewModel.save()
+        val savedId = createViewModel.uiState.first { it.done }.let { repository.observeCameraBodies().first().single().id }
+        val (editViewModel, _, _) = newViewModel(repository, gateway, existingId = savedId)
+        editViewModel.uiState.first { !it.isLoading }
+
+        editViewModel.delete()
+
+        val state = editViewModel.uiState.first { it.done }
+        assertNull(state.savedId)
     }
 }

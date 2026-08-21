@@ -28,14 +28,19 @@ import com.exposures.phone.ui.components.DropdownField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CameraBodyEditScreen(id: String?, onDone: () -> Unit) {
+fun CameraBodyEditScreen(id: String?, onDone: () -> Unit, onSaved: (savedId: String) -> Unit = {}) {
     val container = appContainer()
     val viewModel: CameraBodyEditViewModel = viewModel(
         factory = ExposuresViewModelFactory(container.repository, container.syncPusher, container.dataLayerClient, entityId = id),
     )
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(state.done) { if (state.done) onDone() }
+    LaunchedEffect(state.done) {
+        if (state.done) {
+            state.savedId?.let(onSaved)
+            onDone()
+        }
+    }
 
     Scaffold(topBar = { TopAppBar(title = { Text(if (state.isNew) "New Camera Body" else "Edit Camera Body") }) }) { padding ->
         Column(modifier = Modifier.fillMaxWidth().padding(padding).padding(16.dp)) {

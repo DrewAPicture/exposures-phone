@@ -29,6 +29,9 @@ data class CameraBodyEditUiState(
     val otherFastShutterSpeedDenominator: String = "",
     val hasBulbMode: Boolean = true,
     val done: Boolean = false,
+    /** The id this body was just saved under — set only by [save], never [delete], so a deleted
+     * body's id can never flow back through the same result channel as a created one. */
+    val savedId: String? = null,
 ) {
     private val otherShutterSpeed: ShutterSpeed?
         get() = otherFastShutterSpeedDenominator.toIntOrNull()?.takeIf { it > 0 }?.let(ShutterSpeed::fraction)
@@ -146,7 +149,7 @@ class CameraBodyEditViewModel(
             )
             repository.saveCameraBody(body)
             syncPusher.pushCameraBodies()
-            _uiState.value = _uiState.value.copy(done = true)
+            _uiState.value = _uiState.value.copy(done = true, savedId = id)
         }
     }
 

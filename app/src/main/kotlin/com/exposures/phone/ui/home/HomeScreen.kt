@@ -354,15 +354,15 @@ private fun EquipmentTiles(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             EquipmentTile(
-                title = "Film Rolls",
-                subtitle = "$filmRollCount configured",
-                onClick = onOpenFilmRolls,
-                modifier = Modifier.weight(1f),
-            )
-            EquipmentTile(
                 title = "Film Backs",
                 subtitle = "$filmBackCount configured",
                 onClick = onOpenFilmBacks,
+                modifier = Modifier.weight(1f),
+            )
+            EquipmentTile(
+                title = "Film Rolls",
+                subtitle = "$filmRollCount configured",
+                onClick = onOpenFilmRolls,
                 modifier = Modifier.weight(1f),
             )
         }

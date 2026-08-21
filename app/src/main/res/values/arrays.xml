@@ -1,0 +1,23 @@
+<resources>
+    <!--
+      Example utterances for the custom.actions.intent.CREATE_EXPOSURE capability (see
+      res/xml/shortcuts.xml). $shutterSpeed/$lensName are Text-typed slots — capped at 2 per query
+      pattern by App Actions — so notes is deliberately never a slot here (see the Google Assistant
+      voice-capture plan's Phase 0 findings). $aperture/$isoUsed are Number-typed, which isn't capped.
+    -->
+    <string-array name="create_exposure_query_patterns">
+        <item>save exposure at $shutterSpeed</item>
+        <item>save exposure at $shutterSpeed with the $lensName</item>
+        <item>save exposure at $shutterSpeed at f $aperture</item>
+        <item>save exposure at $shutterSpeed at iso $isoUsed</item>
+        <item>save exposure at $shutterSpeed with the $lensName at f $aperture</item>
+        <item>save exposure at $shutterSpeed with the $lensName at iso $isoUsed</item>
+        <item>save exposure at $shutterSpeed at f $aperture iso $isoUsed</item>
+        <item>save exposure at $shutterSpeed with the $lensName at f $aperture iso $isoUsed</item>
+        <item>log exposure at $shutterSpeed</item>
+        <item>log exposure at $shutterSpeed with the $lensName</item>
+        <item>record exposure at $shutterSpeed</item>
+        <item>capture exposure at $shutterSpeed</item>
+        <item>new exposure at $shutterSpeed</item>
+    </string-array>
+</resources>

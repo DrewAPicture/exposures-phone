@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  App Actions capability declaration for "save exposure" voice capture (see the Google Assistant
+  voice-capture plan). A custom intent, not a Built-In Intent — there's no BII for this app's
+  domain. Fulfills via a URL-template deep link into VoiceCaptureActivity per the plan's Phase 0
+  research spike against current developer.android.com App Actions docs.
+
+  shutterSpeed/lensName are schema.org/Text — App Actions caps a query pattern at 2 Text params, so
+  `notes` is deliberately never a voice slot (see the plan's Phase 0 findings). aperture/isoUsed are
+  schema.org/Number, which isn't capped.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <capability
+        android:name="custom.actions.intent.CREATE_EXPOSURE"
+        app:queryPatterns="@array/create_exposure_query_patterns">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="default.exposures.ww.app"
+            android:targetClass="com.exposures.phone.voice.VoiceCaptureActivity">
+            <url-template android:value="https://exposures.app/voice/create{?shutterSpeed,lensName,aperture,isoUsed}" />
+
+            <parameter
+                android:name="shutterSpeed"
+                android:key="shutterSpeed"
+                android:mimeType="https://schema.org/Text" />
+            <parameter
+                android:name="lensName"
+                android:key="lensName"
+                android:mimeType="https://schema.org/Text" />
+            <parameter
+                android:name="aperture"
+                android:key="aperture"
+                android:mimeType="https://schema.org/Number" />
+            <parameter
+                android:name="isoUsed"
+                android:key="isoUsed"
+                android:mimeType="https://schema.org/Number" />
+        </intent>
+    </capability>
+
+</shortcuts>

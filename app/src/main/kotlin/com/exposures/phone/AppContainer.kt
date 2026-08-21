@@ -10,6 +10,7 @@ import com.exposures.phone.settings.CaptureCameraPreferences
 import com.exposures.phone.settings.ThemePreferences
 import com.exposures.phone.sync.EquipmentSyncPusher
 import com.exposures.phone.sync.UploadScheduler
+import com.exposures.phone.voice.CreateExposureAckBroadcaster
 import com.exposures.sync.NoOpAuthProvider
 import com.exposures.sync.SyncApi
 import com.exposures.sync.SyncApiFactory
@@ -26,6 +27,7 @@ interface AppContainer {
     val csvExportCoordinator: CsvExportCoordinator
     val themePreferences: ThemePreferences
     val captureCameraPreferences: CaptureCameraPreferences
+    val createExposureAckBroadcaster: CreateExposureAckBroadcaster
 
     /** Enqueues an upload-drain attempt (see UploadScheduler) — waits for connectivity if offline. */
     fun triggerUpload()
@@ -38,6 +40,7 @@ class DefaultAppContainer(private val application: Application) : AppContainer {
     override val repository: EquipmentRepository by lazy { EquipmentRepository(database) }
     override val dataLayerClient: DataLayerClient by lazy { DataLayerClient(application) }
     override val syncPusher: EquipmentSyncPusher by lazy { EquipmentSyncPusher(repository, dataLayerClient) }
+    override val createExposureAckBroadcaster: CreateExposureAckBroadcaster by lazy { CreateExposureAckBroadcaster() }
 
     // Placeholder — the backend doesn't exist yet (see core-sync's SyncApi doc). ".invalid" is the
     // RFC 2606 reserved TLD for addresses that are guaranteed never to resolve.

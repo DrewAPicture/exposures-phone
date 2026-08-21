@@ -21,7 +21,8 @@ import kotlinx.coroutines.launch
  * isn't running. Delegates immediately to [CaptureForegroundService]/[RollCompletionHandler]/
  * [ExposureSyncReceiver] — those hold the actual logic and (where they can be) are unit tested;
  * this class is just the GMS entry point wiring, which can't be meaningfully tested outside a
- * real device/emulator pair.
+ * real device/emulator pair. The create-exposure ack (voice capture) is simple enough it's just
+ * decoded inline and republished on [com.exposures.phone.voice.CreateExposureAckBroadcaster].
  */
 class WearMessageListenerService : WearableListenerService() {
 
@@ -35,6 +36,7 @@ class WearMessageListenerService : WearableListenerService() {
             DataLayerPaths.COMPLETE_ROLL_COMMAND -> handleCompleteRoll(messageEvent)
             DataLayerPaths.REQUEST_ROLLS_SYNC_COMMAND -> handleRequestRollsSync()
             DataLayerPaths.CONNECTIVITY_PING_COMMAND -> handleConnectivityPing()
+            DataLayerPaths.CREATE_EXPOSURE_ACK_COMMAND -> handleCreateExposureAck(messageEvent)
         }
     }
 
@@ -61,6 +63,13 @@ class WearMessageListenerService : WearableListenerService() {
     private fun handleConnectivityPing() {
         serviceScope.launch {
             container.dataLayerClient.sendMessage(DataLayerPaths.CONNECTIVITY_PING_ACK_COMMAND, "ack")
+        }
+    }
+
+    private fun handleCreateExposureAck(messageEvent: MessageEvent) {
+        val ack = DataLayerJson.decodeCreateExposureAckCommand(String(messageEvent.data))
+        serviceScope.launch {
+            container.createExposureAckBroadcaster.emit(ack)
         }
     }
 

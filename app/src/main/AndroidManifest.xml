@@ -42,6 +42,31 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!--
+          App Actions fulfillment target for "save exposure" voice capture (see the Google
+          Assistant voice-capture plan and res/xml/shortcuts.xml). Custom App Actions intents
+          fulfill only via a URL-template deep link, so this is a plain ACTION_VIEW/BROWSABLE
+          activity, not a MAIN/LAUNCHER one — it's invisible and finishes itself.
+        -->
+        <activity
+            android:name=".voice.VoiceCaptureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="exposures.app"
+                    android:pathPrefix="/voice/create" />
+            </intent-filter>
         </activity>
 
         <!--
@@ -90,6 +115,10 @@
                     android:scheme="wear"
                     android:host="*"
                     android:path="/command/connectivity-ping" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:path="/command/create-exposure-ack" />
             </intent-filter>
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />

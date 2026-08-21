@@ -115,7 +115,7 @@ fun FilmRollEditScreen(
                 onValueChange = { viewModel.setLightMeter(it?.id) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
-            val filmBacksForBody = state.availableFilmBacks.filter { it.cameraBodyId == state.cameraBodyId }
+            val filmBacksForBody = state.filmBacksForSelectedBody
             if (filmBacksForBody.isEmpty()) {
                 Text(
                     "Add a film back for this camera body first — a roll needs one.",

@@ -36,6 +36,13 @@ data class FilmRollEditUiState(
     val targetFrameCount: Int? = null,
     val done: Boolean = false,
 ) {
+    /** Film backs scoped to the currently-selected camera body — a back belongs to exactly one
+     * body, so a back for a different body is never a valid choice. Shared by the screen's
+     * dropdown and the single-option auto-select logic below, so both always agree on what "the
+     * only option" is. */
+    val filmBacksForSelectedBody: List<FilmBack>
+        get() = availableFilmBacks.filter { it.cameraBodyId == cameraBodyId }
+
     val canSave: Boolean
         get() = name.isNotBlank() &&
             filmStock.isNotBlank() &&
@@ -62,12 +69,22 @@ class FilmRollEditViewModel(
             val filmBacks = repository.observeFilmBacks().first()
             val existing = existingId?.let { repository.getFilmRoll(it) }
             _uiState.value = if (existing == null) {
+                // Auto-fill each picker only when it has exactly one option — never "first of many",
+                // which would silently pick for the user instead of leaving an ambiguous choice to
+                // them. Resolved in dependency order: body -> the backs scoped to that body -> that
+                // back's own frame counts, so a single back for a single body cascades all the way
+                // down to a savable roll with no manual interaction.
+                val cameraBodyId = cameraBodies.singleOrNull()?.id
+                val filmBack = filmBacks.filter { it.cameraBodyId == cameraBodyId }.singleOrNull()
                 _uiState.value.copy(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
                     availableLightMeters = lightMeters,
                     availableFilmBacks = filmBacks,
-                    cameraBodyId = cameraBodies.firstOrNull()?.id,
+                    cameraBodyId = cameraBodyId,
+                    lightMeterId = lightMeters.singleOrNull()?.id,
+                    filmBackId = filmBack?.id,
+                    targetFrameCount = filmBack?.availableFrameCounts?.singleOrNull(),
                 )
             } else {
                 _uiState.value.copy(
@@ -109,7 +126,10 @@ class FilmRollEditViewModel(
         _uiState.value = _uiState.value.copy(colorType = colorType)
     }
 
-    /** Backs are body-specific — a film back that no longer belongs to the new body can't stay selected. */
+    /** Backs are body-specific — a film back that no longer belongs to the new body can't stay
+     * selected. When it's cleared, re-applies the same single-option auto-select the initial load
+     * uses, rather than leaving the user to manually reselect a back that has only one possible
+     * choice for the new body. */
     fun setCameraBody(cameraBodyId: String) {
         val state = _uiState.value
         val selectedBack = state.availableFilmBacks.firstOrNull { it.id == state.filmBackId }
@@ -117,7 +137,12 @@ class FilmRollEditViewModel(
         _uiState.value = if (backStillValid) {
             state.copy(cameraBodyId = cameraBodyId)
         } else {
-            state.copy(cameraBodyId = cameraBodyId, filmBackId = null, targetFrameCount = null)
+            val filmBack = state.availableFilmBacks.filter { it.cameraBodyId == cameraBodyId }.singleOrNull()
+            state.copy(
+                cameraBodyId = cameraBodyId,
+                filmBackId = filmBack?.id,
+                targetFrameCount = filmBack?.availableFrameCounts?.singleOrNull(),
+            )
         }
     }
 
@@ -126,7 +151,9 @@ class FilmRollEditViewModel(
         _uiState.value = _uiState.value.copy(lightMeterId = lightMeterId)
     }
 
-    /** The target frame count is only meaningful for the newly-selected back's own declared counts. */
+    /** The target frame count is only meaningful for the newly-selected back's own declared
+     * counts — auto-fills it when that back has exactly one, the same single-option rule applied
+     * to every other picker on this screen. */
     fun setFilmBack(filmBackId: String) {
         val state = _uiState.value
         val back = state.availableFilmBacks.firstOrNull { it.id == filmBackId }
@@ -134,7 +161,7 @@ class FilmRollEditViewModel(
         _uiState.value = if (countStillValid) {
             state.copy(filmBackId = filmBackId)
         } else {
-            state.copy(filmBackId = filmBackId, targetFrameCount = null)
+            state.copy(filmBackId = filmBackId, targetFrameCount = back?.availableFrameCounts?.singleOrNull())
         }
     }
 

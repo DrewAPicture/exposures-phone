@@ -69,6 +69,101 @@ class FilmRollEditViewModelTest {
     }
 
     @Test
+    fun `does not auto-select a camera body when more than one exists`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededCameraBody(repository, id = "body-2")
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertNull(state.cameraBodyId)
+    }
+
+    @Test
+    fun `auto-selects the film back when exactly one exists for the auto-selected camera body`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val back = seededFilmBack(repository, cameraBodyId = "body-1")
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(back.id, state.filmBackId)
+    }
+
+    @Test
+    fun `does not auto-select a film back when more than one exists for the camera body`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededFilmBack(repository, cameraBodyId = "body-1", id = "back-a")
+        seededFilmBack(repository, cameraBodyId = "body-1", id = "back-b")
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertNull(state.filmBackId)
+    }
+
+    @Test
+    fun `auto-selects the target frame count when the auto-selected film back has only one available count`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val back = FilmBack(
+            id = "back-1", name = "6x7 back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X7,
+            availableFrameCounts = listOf(10), createdAt = 0L, updatedAt = 0L,
+            syncStatus = SyncStatus.SYNCED, remoteId = null,
+        ).also { repository.saveFilmBack(it) }
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(back.id, state.filmBackId)
+        assertEquals(10, state.targetFrameCount)
+    }
+
+    @Test
+    fun `does not auto-select the target frame count when the film back has multiple available counts`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededFilmBack(repository, cameraBodyId = "body-1") // default availableFrameCounts = [10, 11]
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertNull(state.targetFrameCount)
+    }
+
+    @Test
+    fun `auto-selects the light meter when exactly one exists`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val meter = seededLightMeter(repository)
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(meter.id, state.lightMeterId)
+    }
+
+    @Test
+    fun `changing camera body auto-selects the only film back belonging to the new body`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededCameraBody(repository, id = "body-2")
+        val backForBody1 = seededFilmBack(repository, cameraBodyId = "body-1", id = "back-1")
+        val backForBody2 = seededFilmBack(repository, cameraBodyId = "body-2", id = "back-2")
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setCameraBody("body-1")
+        check(viewModel.uiState.value.filmBackId == backForBody1.id)
+
+        viewModel.setCameraBody("body-2")
+
+        assertEquals(backForBody2.id, viewModel.uiState.value.filmBackId)
+    }
+
+    @Test
     fun `cannot save without a film back selected`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
@@ -181,6 +276,9 @@ class FilmRollEditViewModelTest {
         seededLightMeter(repository)
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
         viewModel.uiState.first { !it.isLoading }
+        // The single seeded light meter auto-selects on load — clear it to exercise "no light
+        // meter selected" as a deliberate choice, not just an absence of one to auto-fill.
+        viewModel.setLightMeter(null)
         viewModel.setName("Portra 400 — Roll 1")
         viewModel.setFilmStock("Kodak Portra 400")
         viewModel.setBoxSpeedIso("400")
@@ -188,6 +286,7 @@ class FilmRollEditViewModelTest {
         viewModel.setTargetFrameCount(10)
 
         assertTrue(viewModel.uiState.value.canSave)
+        assertNull(viewModel.uiState.value.lightMeterId)
     }
 
     @Test
@@ -265,7 +364,7 @@ class FilmRollEditViewModelTest {
         val backA = seededFilmBack(repository, cameraBodyId = "body-1", id = "back-a")
         val backB = FilmBack(
             id = "back-b", name = "Other back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X6,
-            availableFrameCounts = listOf(12), createdAt = 0L, updatedAt = 0L,
+            availableFrameCounts = listOf(12, 13), createdAt = 0L, updatedAt = 0L,
             syncStatus = SyncStatus.SYNCED, remoteId = null,
         ).also { repository.saveFilmBack(it) }
         val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
@@ -277,5 +376,26 @@ class FilmRollEditViewModelTest {
 
         assertEquals(backB.id, viewModel.uiState.value.filmBackId)
         assertNull(viewModel.uiState.value.targetFrameCount)
+    }
+
+    @Test
+    fun `selecting a film back with only one available frame count auto-fills it`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val backA = seededFilmBack(repository, cameraBodyId = "body-1", id = "back-a")
+        val backB = FilmBack(
+            id = "back-b", name = "Other back", cameraBodyId = "body-1", type = FilmBackType.ROLL_6X6,
+            availableFrameCounts = listOf(12), createdAt = 0L, updatedAt = 0L,
+            syncStatus = SyncStatus.SYNCED, remoteId = null,
+        ).also { repository.saveFilmBack(it) }
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setFilmBack(backA.id)
+        viewModel.setTargetFrameCount(10)
+
+        viewModel.setFilmBack(backB.id)
+
+        assertEquals(backB.id, viewModel.uiState.value.filmBackId)
+        assertEquals(12, viewModel.uiState.value.targetFrameCount)
     }
 }

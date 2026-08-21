@@ -15,10 +15,13 @@ import com.exposures.phone.settings.CaptureCameraPreference
 import com.exposures.phone.settings.CaptureCameraPreferences
 import com.exposures.phone.settings.ThemePreferences
 import com.exposures.phone.sync.FakeDataLayerGateway
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -239,5 +242,83 @@ class SettingsViewModelTest {
 
         val state = viewModel.uiState.first { it.captureCameraPreference == CaptureCameraPreference.FRONT }
         assertEquals(CaptureCameraPreference.FRONT, state.captureCameraPreference)
+    }
+
+    @Test
+    fun `setThemePreference emits a saved event`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = SettingsViewModel(
+            repository,
+            FakeDataLayerGateway(),
+            CsvExportCoordinator(repository),
+            createThemePreferences(),
+            createCaptureCameraPreferences(),
+        )
+        var emissions = 0
+        val job = launch { viewModel.savedEvent.collect { emissions++ } }
+        runCurrent()
+
+        viewModel.setThemePreference(AppThemePreference.DARK)
+        runCurrent()
+
+        assertEquals(1, emissions)
+        job.cancel()
+    }
+
+    @Test
+    fun `setCaptureCameraPreference emits a saved event`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = SettingsViewModel(
+            repository,
+            FakeDataLayerGateway(),
+            CsvExportCoordinator(repository),
+            createThemePreferences(),
+            createCaptureCameraPreferences(),
+        )
+        var emissions = 0
+        val job = launch { viewModel.savedEvent.collect { emissions++ } }
+        runCurrent()
+
+        viewModel.setCaptureCameraPreference(CaptureCameraPreference.FRONT)
+        runCurrent()
+
+        assertEquals(1, emissions)
+        job.cancel()
+    }
+
+    @Test
+    fun `a second save is not dropped while the collector is still handling the first`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = SettingsViewModel(
+            repository,
+            FakeDataLayerGateway(),
+            CsvExportCoordinator(repository),
+            createThemePreferences(),
+            createCaptureCameraPreferences(),
+        )
+        val received = mutableListOf<Unit>()
+        // Holds the collector suspended inside its first `collect` invocation, simulating a
+        // Snackbar still on screen from the first save when a second one comes in — exactly the
+        // scenario extraBufferCapacity = 1 (rather than the default 0) protects against.
+        val releaseFirst = CompletableDeferred<Unit>()
+        val job = launch {
+            viewModel.savedEvent.collect {
+                received += Unit
+                if (received.size == 1) releaseFirst.await()
+            }
+        }
+        runCurrent()
+
+        viewModel.setThemePreference(AppThemePreference.DARK)
+        runCurrent() // collector receives it and is now suspended awaiting releaseFirst
+
+        viewModel.setCaptureCameraPreference(CaptureCameraPreference.FRONT)
+        runCurrent()
+
+        releaseFirst.complete(Unit)
+        runCurrent()
+
+        assertEquals(2, received.size)
+        job.cancel()
     }
 }

@@ -43,6 +43,29 @@ class FilmBackEditViewModelTest {
     }
 
     @Test
+    fun `auto-selects the camera body when exactly one exists`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val viewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals("body-1", state.cameraBodyId)
+    }
+
+    @Test
+    fun `does not auto-select a camera body when more than one exists and none is specified`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededCameraBody(repository, id = "body-2")
+        val viewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(null, state.cameraBodyId)
+    }
+
+    @Test
     fun `cannot save without a name or a primary frame count`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)
@@ -210,6 +233,8 @@ class FilmBackEditViewModelTest {
         val gateway = FakeDataLayerGateway()
         val createViewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
         createViewModel.uiState.first { !it.isLoading }
+        // Two bodies exist, so camera body isn't auto-selected here — pick one explicitly.
+        createViewModel.setCameraBody("body-1")
         createViewModel.setName("6x7 back")
         createViewModel.setPrimaryFrameCount("10")
         createViewModel.save()

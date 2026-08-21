@@ -68,11 +68,15 @@ class FilmBackEditViewModel(
             val cameraBodies = repository.observeCameraBodies().first()
             val existing = existingId?.let { repository.getFilmBack(it) }
             _uiState.value = if (existing == null) {
+                // An explicit initialCameraBodyId (from the New Film Roll inline-create flow)
+                // always wins; otherwise auto-fill only when there's exactly one body — never
+                // "first of many", which would silently pick for the user instead of leaving an
+                // ambiguous choice to them.
                 _uiState.value.copy(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
                     cameraBodyId = cameraBodies.firstOrNull { it.id == initialCameraBodyId }?.id
-                        ?: cameraBodies.firstOrNull()?.id,
+                        ?: cameraBodies.singleOrNull()?.id,
                 )
             } else {
                 val sortedCounts = existing.availableFrameCounts.sorted()

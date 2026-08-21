@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -25,8 +26,8 @@ class FilmBackEditViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private suspend fun seededCameraBody(repository: EquipmentRepository) = CameraBody(
-        id = "body-1", name = "RZ67 Pro II", manufacturer = "Mamiya",
+    private suspend fun seededCameraBody(repository: EquipmentRepository, id: String = "body-1") = CameraBody(
+        id = id, name = "RZ67 Pro II", manufacturer = "Mamiya",
         availableShutterSpeeds = listOf(ShutterSpeed.fraction(400)),
         hasBulbMode = true, createdAt = 0L, updatedAt = 0L, syncStatus = SyncStatus.SYNCED, remoteId = null,
     ).also { repository.saveCameraBody(it) }
@@ -172,6 +173,89 @@ class FilmBackEditViewModelTest {
         assertEquals(FilmBackType.ROLL_6X6, state.type)
         assertEquals("12", state.primaryFrameCount)
         assertEquals("13", state.alternateFrameCount)
+    }
+
+    @Test
+    fun `a new back with an initial camera body seeds the camera body dropdown`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededCameraBody(repository, id = "body-2")
+        val viewModel = FilmBackEditViewModel(
+            repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null, initialCameraBodyId = "body-2",
+        )
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals("body-2", state.cameraBodyId)
+    }
+
+    @Test
+    fun `an initial camera body that no longer exists falls back to the first available body`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        val viewModel = FilmBackEditViewModel(
+            repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null, initialCameraBodyId = "missing-body",
+        )
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals("body-1", state.cameraBodyId)
+    }
+
+    @Test
+    fun `editing an existing back ignores the initial camera body`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository, id = "body-1")
+        seededCameraBody(repository, id = "body-2")
+        val gateway = FakeDataLayerGateway()
+        val createViewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        createViewModel.uiState.first { !it.isLoading }
+        createViewModel.setName("6x7 back")
+        createViewModel.setPrimaryFrameCount("10")
+        createViewModel.save()
+        val savedId = createViewModel.uiState.first { it.done }.let { repository.observeFilmBacks().first().single().id }
+
+        val editViewModel = FilmBackEditViewModel(
+            repository, EquipmentSyncPusher(repository, gateway), savedId, initialCameraBodyId = "body-2",
+        )
+
+        val state = editViewModel.uiState.first { !it.isLoading }
+        assertEquals("body-1", state.cameraBodyId)
+    }
+
+    @Test
+    fun `save exposes the new back's id as savedId`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val viewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("6x7 back")
+        viewModel.setPrimaryFrameCount("10")
+
+        viewModel.save()
+
+        val state = viewModel.uiState.first { it.done }
+        assertEquals(repository.observeFilmBacks().first().single().id, state.savedId)
+    }
+
+    @Test
+    fun `delete never sets savedId`() = runTest {
+        val repository = createTestRepository()
+        seededCameraBody(repository)
+        val gateway = FakeDataLayerGateway()
+        val createViewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        createViewModel.uiState.first { !it.isLoading }
+        createViewModel.setName("6x7 back")
+        createViewModel.setPrimaryFrameCount("10")
+        createViewModel.save()
+        val savedId = createViewModel.uiState.first { it.done }.let { repository.observeFilmBacks().first().single().id }
+        val editViewModel = FilmBackEditViewModel(repository, EquipmentSyncPusher(repository, gateway), savedId)
+        editViewModel.uiState.first { !it.isLoading }
+
+        editViewModel.delete()
+
+        val state = editViewModel.uiState.first { it.done }
+        assertNull(state.savedId)
     }
 
     @Test

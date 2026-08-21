@@ -30,6 +30,7 @@ class ExposuresViewModelFactory(
     private val themePreferences: ThemePreferences? = null,
     private val captureCameraPreferences: CaptureCameraPreferences? = null,
     private val entityId: String? = null,
+    private val initialCameraBodyId: String? = null,
     private val triggerUpload: () -> Unit = {},
 ) : ViewModelProvider.Factory {
 
@@ -52,7 +53,7 @@ class ExposuresViewModelFactory(
         LightMeterListViewModel::class.java -> LightMeterListViewModel(repository)
         LightMeterEditViewModel::class.java -> LightMeterEditViewModel(repository, syncPusher, entityId)
         FilmBackListViewModel::class.java -> FilmBackListViewModel(repository)
-        FilmBackEditViewModel::class.java -> FilmBackEditViewModel(repository, syncPusher, entityId)
+        FilmBackEditViewModel::class.java -> FilmBackEditViewModel(repository, syncPusher, entityId, initialCameraBodyId)
         FilmRollListViewModel::class.java -> FilmRollListViewModel(repository, requireNotNull(csvExportCoordinator))
         FilmRollEditViewModel::class.java -> FilmRollEditViewModel(repository, syncPusher, entityId)
         else -> error("Unknown ViewModel class: $modelClass")

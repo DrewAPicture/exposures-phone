@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,14 +27,31 @@ import com.exposures.phone.ui.components.DropdownField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FilmBackEditScreen(id: String?, onDone: () -> Unit) {
+fun FilmBackEditScreen(
+    id: String?,
+    initialCameraBodyId: String?,
+    onDone: () -> Unit,
+    onSaved: (savedId: String) -> Unit,
+    onAddCameraBody: () -> Unit,
+    createdCameraBodyId: State<String?>,
+) {
     val container = appContainer()
     val viewModel: FilmBackEditViewModel = viewModel(
-        factory = ExposuresViewModelFactory(container.repository, container.syncPusher, container.dataLayerClient, entityId = id),
+        factory = ExposuresViewModelFactory(
+            container.repository, container.syncPusher, container.dataLayerClient,
+            entityId = id, initialCameraBodyId = initialCameraBodyId,
+        ),
     )
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(state.done) { if (state.done) onDone() }
+    LaunchedEffect(state.done) {
+        if (state.done) {
+            state.savedId?.let(onSaved)
+            onDone()
+        }
+    }
+    val newCameraBodyId by createdCameraBodyId
+    LaunchedEffect(newCameraBodyId) { newCameraBodyId?.let { viewModel.setCameraBody(it) } }
 
     Scaffold(topBar = { TopAppBar(title = { Text(if (state.isNew) "New Film Back" else "Edit Film Back") }) }) { padding ->
         Column(modifier = Modifier.fillMaxWidth().padding(padding).padding(16.dp)) {
@@ -48,6 +66,10 @@ fun FilmBackEditScreen(id: String?, onDone: () -> Unit) {
                     "Add a camera body first — a back needs one.",
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                Button(
+                    onClick = onAddCameraBody,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text("Add camera body") }
             } else {
                 DropdownField(
                     label = "Camera body",

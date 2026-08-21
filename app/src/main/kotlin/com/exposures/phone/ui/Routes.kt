@@ -14,16 +14,30 @@ object Routes {
     const val LIGHT_METER_EDIT = "lightMeterEdit?id={id}"
 
     const val FILM_BACK_LIST = "filmBackList"
-    const val FILM_BACK_EDIT = "filmBackEdit?id={id}"
+    const val FILM_BACK_EDIT = "filmBackEdit?id={id}&cameraBodyId={cameraBodyId}"
 
     const val FILM_ROLL_LIST = "filmRollList"
     const val FILM_ROLL_EDIT = "filmRollEdit?id={id}"
 
     const val ARG_ID = "id"
+    const val ARG_CAMERA_BODY_ID = "cameraBodyId"
+
+    /** Set on the previous back stack entry's [androidx.lifecycle.SavedStateHandle] by
+     * `CameraBodyEditScreen` on save — see [consumeResult]. */
+    const val RESULT_CAMERA_BODY_ID = "createdCameraBodyId"
+
+    /** Set on the previous back stack entry's [androidx.lifecycle.SavedStateHandle] by
+     * `FilmBackEditScreen` on save — see [consumeResult]. */
+    const val RESULT_FILM_BACK_ID = "createdFilmBackId"
 
     fun cameraBodyEdit(id: String? = null) = if (id == null) "cameraBodyEdit" else "cameraBodyEdit?id=$id"
     fun lensEdit(id: String? = null) = if (id == null) "lensEdit" else "lensEdit?id=$id"
     fun lightMeterEdit(id: String? = null) = if (id == null) "lightMeterEdit" else "lightMeterEdit?id=$id"
-    fun filmBackEdit(id: String? = null) = if (id == null) "filmBackEdit" else "filmBackEdit?id=$id"
+
+    fun filmBackEdit(id: String? = null, cameraBodyId: String? = null): String {
+        val params = listOfNotNull(id?.let { "id=$it" }, cameraBodyId?.let { "cameraBodyId=$it" })
+        return if (params.isEmpty()) "filmBackEdit" else "filmBackEdit?" + params.joinToString("&")
+    }
+
     fun filmRollEdit(id: String? = null) = if (id == null) "filmRollEdit" else "filmRollEdit?id=$id"
 }

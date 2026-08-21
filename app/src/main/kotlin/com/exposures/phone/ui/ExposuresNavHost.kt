@@ -27,6 +27,11 @@ fun ExposuresNavHost() {
         nullable = true
         defaultValue = null
     }
+    val cameraBodyIdArgument = navArgument(Routes.ARG_CAMERA_BODY_ID) {
+        type = NavType.StringType
+        nullable = true
+        defaultValue = null
+    }
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
@@ -53,6 +58,9 @@ fun ExposuresNavHost() {
             CameraBodyEditScreen(
                 id = backStackEntry.arguments?.getString(Routes.ARG_ID),
                 onDone = { navController.popBackStack() },
+                onSaved = { savedId ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set(Routes.RESULT_CAMERA_BODY_ID, savedId)
+                },
             )
         }
 
@@ -88,10 +96,16 @@ fun ExposuresNavHost() {
                 onEdit = { id -> navController.navigate(Routes.filmBackEdit(id)) },
             )
         }
-        composable(Routes.FILM_BACK_EDIT, arguments = listOf(idArgument)) { backStackEntry ->
+        composable(Routes.FILM_BACK_EDIT, arguments = listOf(idArgument, cameraBodyIdArgument)) { backStackEntry ->
             FilmBackEditScreen(
                 id = backStackEntry.arguments?.getString(Routes.ARG_ID),
+                initialCameraBodyId = backStackEntry.arguments?.getString(Routes.ARG_CAMERA_BODY_ID),
                 onDone = { navController.popBackStack() },
+                onSaved = { savedId ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set(Routes.RESULT_FILM_BACK_ID, savedId)
+                },
+                onAddCameraBody = { navController.navigate(Routes.cameraBodyEdit()) },
+                createdCameraBodyId = backStackEntry.savedStateHandle.consumeResult(Routes.RESULT_CAMERA_BODY_ID),
             )
         }
 

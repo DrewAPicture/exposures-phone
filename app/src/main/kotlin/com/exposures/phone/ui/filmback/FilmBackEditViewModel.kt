@@ -34,6 +34,10 @@ data class FilmBackEditUiState(
     /** A second frame count this same back sometimes yields — e.g. tight loading squeezing out one extra frame. */
     val alternateFrameCount: String = "",
     val done: Boolean = false,
+    /** The id this back was just saved under — set only by [FilmBackEditViewModel.save], never
+     * [FilmBackEditViewModel.delete], so a deleted back's id can never flow back through the same
+     * result channel as a created one. */
+    val savedId: String? = null,
 ) {
     private val alternateCountValid: Boolean
         get() = alternateFrameCount.isBlank() || alternateFrameCount.toIntOrNull()?.let { it > 0 } == true
@@ -49,6 +53,10 @@ class FilmBackEditViewModel(
     private val repository: EquipmentRepository,
     private val syncPusher: EquipmentSyncPusher,
     private val existingId: String?,
+    /** Preselects the camera body dropdown for a brand-new back — used when a back is created
+     * inline from New Film Roll, so it comes back already scoped to the roll's camera body. Never
+     * applies when editing an existing back. */
+    private val initialCameraBodyId: String? = null,
 ) : ViewModel() {
 
     private val id = existingId ?: UUID.randomUUID().toString()
@@ -63,7 +71,8 @@ class FilmBackEditViewModel(
                 _uiState.value.copy(
                     isLoading = false,
                     availableCameraBodies = cameraBodies,
-                    cameraBodyId = cameraBodies.firstOrNull()?.id,
+                    cameraBodyId = cameraBodies.firstOrNull { it.id == initialCameraBodyId }?.id
+                        ?: cameraBodies.firstOrNull()?.id,
                 )
             } else {
                 val sortedCounts = existing.availableFrameCounts.sorted()
@@ -128,7 +137,7 @@ class FilmBackEditViewModel(
             )
             repository.saveFilmBack(filmBack)
             syncPusher.pushFilmBacks()
-            _uiState.value = _uiState.value.copy(done = true)
+            _uiState.value = _uiState.value.copy(done = true, savedId = id)
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerGateway
 import com.exposures.phone.export.CsvExportCoordinator
+import com.exposures.phone.settings.CaptureCameraPreferences
 import com.exposures.phone.settings.ThemePreferences
 import com.exposures.phone.sync.EquipmentSyncPusher
 import com.exposures.phone.ui.camerabody.CameraBodyEditViewModel
@@ -27,6 +28,7 @@ class ExposuresViewModelFactory(
     private val dataLayerGateway: DataLayerGateway,
     private val csvExportCoordinator: CsvExportCoordinator? = null,
     private val themePreferences: ThemePreferences? = null,
+    private val captureCameraPreferences: CaptureCameraPreferences? = null,
     private val entityId: String? = null,
     private val triggerUpload: () -> Unit = {},
 ) : ViewModelProvider.Factory {
@@ -40,6 +42,7 @@ class ExposuresViewModelFactory(
                 dataLayerGateway,
                 requireNotNull(csvExportCoordinator),
                 requireNotNull(themePreferences),
+                requireNotNull(captureCameraPreferences),
                 triggerUpload,
             )
         CameraBodyListViewModel::class.java -> CameraBodyListViewModel(repository)

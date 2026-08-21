@@ -6,6 +6,7 @@ import com.exposures.database.ExposuresDatabaseProvider
 import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerClient
 import com.exposures.phone.export.CsvExportCoordinator
+import com.exposures.phone.settings.CaptureCameraPreferences
 import com.exposures.phone.settings.ThemePreferences
 import com.exposures.phone.sync.EquipmentSyncPusher
 import com.exposures.phone.sync.UploadScheduler
@@ -24,6 +25,7 @@ interface AppContainer {
     val syncApi: SyncApi
     val csvExportCoordinator: CsvExportCoordinator
     val themePreferences: ThemePreferences
+    val captureCameraPreferences: CaptureCameraPreferences
 
     /** Enqueues an upload-drain attempt (see UploadScheduler) — waits for connectivity if offline. */
     fun triggerUpload()
@@ -42,6 +44,7 @@ class DefaultAppContainer(private val application: Application) : AppContainer {
     override val syncApi: SyncApi by lazy { SyncApiFactory.create("https://sync.exposures.invalid/", NoOpAuthProvider) }
     override val csvExportCoordinator: CsvExportCoordinator by lazy { CsvExportCoordinator(repository) }
     override val themePreferences: ThemePreferences by lazy { ThemePreferences(application) }
+    override val captureCameraPreferences: CaptureCameraPreferences by lazy { CaptureCameraPreferences(application) }
 
     override fun triggerUpload() = UploadScheduler.enqueue(application)
 }

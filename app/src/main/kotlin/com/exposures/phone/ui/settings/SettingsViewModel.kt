@@ -6,6 +6,8 @@ import com.exposures.database.repository.EquipmentRepository
 import com.exposures.datalayer.DataLayerGateway
 import com.exposures.phone.export.CsvExportCoordinator
 import com.exposures.phone.settings.AppThemePreference
+import com.exposures.phone.settings.CaptureCameraPreference
+import com.exposures.phone.settings.CaptureCameraPreferences
 import com.exposures.phone.settings.ThemePreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,6 +21,7 @@ data class SettingsUiState(
     val pendingSyncCount: Int = 0,
     val watchReachable: Boolean? = null,
     val themePreference: AppThemePreference = AppThemePreference.SYSTEM,
+    val captureCameraPreference: CaptureCameraPreference = CaptureCameraPreference.REAR,
 )
 
 class SettingsViewModel(
@@ -26,6 +29,7 @@ class SettingsViewModel(
     private val gateway: DataLayerGateway,
     private val csvExportCoordinator: CsvExportCoordinator,
     private val themePreferences: ThemePreferences,
+    private val captureCameraPreferences: CaptureCameraPreferences,
     private val triggerUpload: () -> Unit = {},
 ) : ViewModel() {
     private val watchReachable = MutableStateFlow<Boolean?>(null)
@@ -38,12 +42,14 @@ class SettingsViewModel(
         watchReachable,
         pendingSyncCount,
         themePreferences.preference,
-    ) { reachable, pendingSync, themePreference ->
+        captureCameraPreferences.preference,
+    ) { reachable, pendingSync, themePreference, captureCameraPreference ->
         SettingsUiState(
             isLoading = false,
             watchReachable = reachable,
             pendingSyncCount = pendingSync,
             themePreference = themePreference,
+            captureCameraPreference = captureCameraPreference,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
@@ -63,4 +69,6 @@ class SettingsViewModel(
     suspend fun exportAllCsv(): String = csvExportCoordinator.exportAll()
 
     fun setThemePreference(value: AppThemePreference) = themePreferences.setPreference(value)
+
+    fun setCaptureCameraPreference(value: CaptureCameraPreference) = captureCameraPreferences.setPreference(value)
 }

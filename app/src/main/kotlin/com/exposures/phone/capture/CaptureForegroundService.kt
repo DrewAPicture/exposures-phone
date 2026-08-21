@@ -29,6 +29,7 @@ import com.exposures.model.ReferencePhoto
 import com.exposures.model.SyncStatus
 import com.exposures.phone.ExposuresApplication
 import com.exposures.phone.MainActivity
+import com.exposures.phone.settings.CaptureCameraPreference
 import com.exposures.phone.sync.CaptureResultPublisher
 import com.exposures.phone.sync.UploadScheduler
 import kotlinx.coroutines.delay
@@ -92,7 +93,11 @@ class CaptureForegroundService : LifecycleService() {
 
         val cameraProvider = ProcessCameraProvider.getInstance(this).await()
         val imageCapture = ImageCapture.Builder().build()
-        val camera = cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, imageCapture)
+        val selector = when (container.captureCameraPreferences.preference.value) {
+            CaptureCameraPreference.FRONT -> CameraSelector.DEFAULT_FRONT_CAMERA
+            CaptureCameraPreference.REAR -> CameraSelector.DEFAULT_BACK_CAMERA
+        }
+        val camera = cameraProvider.bindToLifecycle(this, selector, imageCapture)
 
         try {
             val zoomState = camera.cameraInfo.zoomState.value

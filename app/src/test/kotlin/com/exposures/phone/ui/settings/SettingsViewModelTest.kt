@@ -11,6 +11,8 @@ import com.exposures.phone.MainDispatcherRule
 import com.exposures.phone.createTestRepository
 import com.exposures.phone.export.CsvExportCoordinator
 import com.exposures.phone.settings.AppThemePreference
+import com.exposures.phone.settings.CaptureCameraPreference
+import com.exposures.phone.settings.CaptureCameraPreferences
 import com.exposures.phone.settings.ThemePreferences
 import com.exposures.phone.sync.FakeDataLayerGateway
 import kotlinx.coroutines.channels.Channel
@@ -39,6 +41,11 @@ class SettingsViewModelTest {
         return ThemePreferences(context)
     }
 
+    private fun createCaptureCameraPreferences(): CaptureCameraPreferences {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        return CaptureCameraPreferences(context)
+    }
+
     @Test
     fun `reports the watch as reachable when the gateway finds a node`() = runTest {
         val repository = createTestRepository()
@@ -48,6 +55,7 @@ class SettingsViewModelTest {
             gateway,
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
 
         val state = viewModel.uiState.first { it.watchReachable != null }
@@ -64,6 +72,7 @@ class SettingsViewModelTest {
             gateway,
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
 
         val state = viewModel.uiState.first { it.watchReachable != null }
@@ -80,6 +89,7 @@ class SettingsViewModelTest {
             gateway,
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
         viewModel.uiState.first { it.watchReachable != null }
 
@@ -109,6 +119,7 @@ class SettingsViewModelTest {
             gateway,
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
         viewModel.uiState.first { it.watchReachable == true }
 
@@ -153,6 +164,7 @@ class SettingsViewModelTest {
             FakeDataLayerGateway(),
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
 
         val state = viewModel.uiState.first { !it.isLoading }
@@ -169,6 +181,7 @@ class SettingsViewModelTest {
             FakeDataLayerGateway(),
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
             triggerUpload = { triggered = true },
         )
 
@@ -185,6 +198,7 @@ class SettingsViewModelTest {
             FakeDataLayerGateway(),
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
 
         val csv = viewModel.exportAllCsv()
@@ -200,11 +214,29 @@ class SettingsViewModelTest {
             FakeDataLayerGateway(),
             CsvExportCoordinator(repository),
             createThemePreferences(),
+            createCaptureCameraPreferences(),
         )
 
         viewModel.setThemePreference(AppThemePreference.DARK)
 
         val state = viewModel.uiState.first { it.themePreference == AppThemePreference.DARK }
         assertEquals(AppThemePreference.DARK, state.themePreference)
+    }
+
+    @Test
+    fun `setCaptureCameraPreference updates capture camera selection`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = SettingsViewModel(
+            repository,
+            FakeDataLayerGateway(),
+            CsvExportCoordinator(repository),
+            createThemePreferences(),
+            createCaptureCameraPreferences(),
+        )
+
+        viewModel.setCaptureCameraPreference(CaptureCameraPreference.FRONT)
+
+        val state = viewModel.uiState.first { it.captureCameraPreference == CaptureCameraPreference.FRONT }
+        assertEquals(CaptureCameraPreference.FRONT, state.captureCameraPreference)
     }
 }

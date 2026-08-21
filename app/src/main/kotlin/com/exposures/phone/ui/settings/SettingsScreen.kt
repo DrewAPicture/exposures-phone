@@ -26,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.exposures.phone.ExposuresViewModelFactory
 import com.exposures.phone.export.CsvFileSharer
 import com.exposures.phone.settings.AppThemePreference
+import com.exposures.phone.settings.CaptureCameraPreference
 import com.exposures.phone.ui.appContainer
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,7 @@ fun SettingsScreen() {
             container.dataLayerClient,
             container.csvExportCoordinator,
             container.themePreferences,
+            container.captureCameraPreferences,
             triggerUpload = container::triggerUpload,
         ),
     )
@@ -125,6 +127,34 @@ fun SettingsScreen() {
                             label = "Dark",
                             selected = state.themePreference == AppThemePreference.DARK,
                             onClick = { viewModel.setThemePreference(AppThemePreference.DARK) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("Capture Camera", style = MaterialTheme.typography.titleSmall)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        ThemeOptionButton(
+                            label = "Rear",
+                            selected = state.captureCameraPreference == CaptureCameraPreference.REAR,
+                            onClick = { viewModel.setCaptureCameraPreference(CaptureCameraPreference.REAR) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        ThemeOptionButton(
+                            label = "Front",
+                            selected = state.captureCameraPreference == CaptureCameraPreference.FRONT,
+                            onClick = { viewModel.setCaptureCameraPreference(CaptureCameraPreference.FRONT) },
                             modifier = Modifier.weight(1f),
                         )
                     }

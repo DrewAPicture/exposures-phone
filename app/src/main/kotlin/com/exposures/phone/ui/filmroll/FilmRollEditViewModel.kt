@@ -152,8 +152,11 @@ class FilmRollEditViewModel(
     }
 
     /** The target frame count is only meaningful for the newly-selected back's own declared
-     * counts — auto-fills it when that back has exactly one, the same single-option rule applied
-     * to every other picker on this screen. */
+     * counts. Defaults to the first of them rather than leaving the field null: the dropdown in
+     * `FilmRollEditScreen` already shows that same first option as soon as a back is picked (a
+     * display-only fallback that never wrote back into state), so leaving this null meant the
+     * visible value and the actual state disagreed — Save stayed disabled until the user re-opened
+     * the dropdown and re-picked the value already on screen. */
     fun setFilmBack(filmBackId: String) {
         val state = _uiState.value
         val back = state.availableFilmBacks.firstOrNull { it.id == filmBackId }
@@ -161,7 +164,7 @@ class FilmRollEditViewModel(
         _uiState.value = if (countStillValid) {
             state.copy(filmBackId = filmBackId)
         } else {
-            state.copy(filmBackId = filmBackId, targetFrameCount = back?.availableFrameCounts?.singleOrNull())
+            state.copy(filmBackId = filmBackId, targetFrameCount = back?.availableFrameCounts?.firstOrNull())
         }
     }
 

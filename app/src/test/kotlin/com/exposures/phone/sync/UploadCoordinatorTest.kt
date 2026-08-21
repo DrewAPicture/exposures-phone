@@ -29,6 +29,7 @@ class UploadCoordinatorTest {
         filmRollId = "roll-1",
         frameNumber = 1,
         lensId = "lens-1",
+        focalLengthMm = null,
         shutterSpeed = ShutterSpeed.fraction(125),
         aperture = 8.0,
         isoUsed = 400,

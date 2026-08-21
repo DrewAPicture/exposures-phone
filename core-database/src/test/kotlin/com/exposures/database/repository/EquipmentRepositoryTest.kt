@@ -129,6 +129,7 @@ class EquipmentRepositoryTest {
         filmRollId = filmRollId,
         frameNumber = frameNumber,
         lensId = "lens-1",
+        focalLengthMm = null,
         shutterSpeed = ShutterSpeed.fraction(125),
         aperture = 8.0,
         isoUsed = 400,

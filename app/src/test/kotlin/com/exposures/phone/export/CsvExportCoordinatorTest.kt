@@ -49,7 +49,7 @@ class CsvExportCoordinatorTest {
     )
 
     private fun exposure(id: String, filmRollId: String, frameNumber: Int) = Exposure(
-        id = id, filmRollId = filmRollId, frameNumber = frameNumber, lensId = "lens-1",
+        id = id, filmRollId = filmRollId, frameNumber = frameNumber, lensId = "lens-1", focalLengthMm = null,
         shutterSpeed = ShutterSpeed.fraction(125), aperture = 8.0, isoUsed = 400, zone = null, notes = null,
         capturedAt = 0L, referencePhotoStatus = PhotoStatus.CAPTURED, createdAt = 0L, updatedAt = 0L,
         syncStatus = SyncStatus.SYNCED, remoteId = null,

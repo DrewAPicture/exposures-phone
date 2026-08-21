@@ -137,6 +137,7 @@ class SettingsViewModelTest {
         filmRollId = "roll-1",
         frameNumber = 1,
         lensId = "lens-1",
+        focalLengthMm = null,
         shutterSpeed = ShutterSpeed.fraction(125),
         aperture = 8.0,
         isoUsed = 400,
@@ -203,7 +204,7 @@ class SettingsViewModelTest {
 
         val csv = viewModel.exportAllCsv()
 
-        assertTrue(csv.startsWith("Roll,Frame,Lens,Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status"))
+        assertTrue(csv.startsWith("Roll,Frame,Lens,Focal Length (mm),Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status"))
     }
 
     @Test

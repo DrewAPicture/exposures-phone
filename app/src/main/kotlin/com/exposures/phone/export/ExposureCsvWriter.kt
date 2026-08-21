@@ -15,7 +15,8 @@ import java.time.format.DateTimeFormatter
  */
 object ExposureCsvWriter {
     private val HEADER = listOf(
-        "Roll", "Frame", "Lens", "Shutter Speed", "Aperture", "ISO", "Zone", "Notes", "Captured At", "Photo Status",
+        "Roll", "Frame", "Lens", "Focal Length (mm)", "Shutter Speed", "Aperture", "ISO", "Zone", "Notes",
+        "Captured At", "Photo Status",
     )
     private val TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
@@ -31,6 +32,7 @@ object ExposureCsvWriter {
                 rollNames[exposure.filmRollId] ?: exposure.filmRollId,
                 exposure.frameNumber.toString(),
                 lensNames[exposure.lensId] ?: exposure.lensId,
+                exposure.focalLengthMm?.toString().orEmpty(),
                 exposure.shutterSpeed.label,
                 "ƒ/${exposure.aperture}",
                 exposure.isoUsed.toString(),

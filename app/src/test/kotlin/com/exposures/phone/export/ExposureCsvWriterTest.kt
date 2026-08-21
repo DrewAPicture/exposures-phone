@@ -16,11 +16,12 @@ class ExposureCsvWriterTest {
         filmRollId: String = "roll-1",
         frameNumber: Int = 1,
         lensId: String = "lens-1",
+        focalLengthMm: Int? = null,
         zone: Int? = null,
         notes: String? = null,
         capturedAt: Long = 0L,
     ) = Exposure(
-        id = id, filmRollId = filmRollId, frameNumber = frameNumber, lensId = lensId,
+        id = id, filmRollId = filmRollId, frameNumber = frameNumber, lensId = lensId, focalLengthMm = focalLengthMm,
         shutterSpeed = ShutterSpeed.fraction(125), aperture = 8.0, isoUsed = 400, zone = zone, notes = notes,
         capturedAt = capturedAt, referencePhotoStatus = PhotoStatus.CAPTURED, createdAt = 0L, updatedAt = 0L,
         syncStatus = SyncStatus.SYNCED, remoteId = null,
@@ -36,14 +37,17 @@ class ExposureCsvWriterTest {
         )
 
         val lines = csv.lines()
-        assertEquals("Roll,Frame,Lens,Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status", lines[0])
+        assertEquals(
+            "Roll,Frame,Lens,Focal Length (mm),Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status",
+            lines[0],
+        )
         assertEquals(2, lines.size)
     }
 
     @Test
     fun `a row resolves roll and lens names, formats aperture and timestamp, and includes photo status`() {
         val csv = ExposureCsvWriter.write(
-            exposures = listOf(exposure(capturedAt = 1_700_000_000_000L)),
+            exposures = listOf(exposure(focalLengthMm = 110, capturedAt = 1_700_000_000_000L)),
             rollNames = mapOf("roll-1" to "Portra 400 — Roll 1"),
             lensNames = mapOf("lens-1" to "110mm f/2.8 W"),
             zoneId = ZoneOffset.UTC,
@@ -51,9 +55,21 @@ class ExposureCsvWriterTest {
 
         val row = csv.lines()[1]
         assertEquals(
-            "Portra 400 — Roll 1,1,110mm f/2.8 W,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,,,2023-11-14 22:13,CAPTURED",
+            "Portra 400 — Roll 1,1,110mm f/2.8 W,110,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,,,2023-11-14 22:13,CAPTURED",
             row,
         )
+    }
+
+    @Test
+    fun `a null focal length renders as an empty field`() {
+        val csv = ExposureCsvWriter.write(
+            exposures = listOf(exposure(focalLengthMm = null)),
+            rollNames = mapOf("roll-1" to "Roll"),
+            lensNames = mapOf("lens-1" to "Lens"),
+            zoneId = ZoneOffset.UTC,
+        )
+
+        assertEquals("", csv.lines()[1].split(",")[3])
     }
 
     @Test
@@ -65,7 +81,7 @@ class ExposureCsvWriterTest {
             zoneId = ZoneOffset.UTC,
         )
 
-        assertEquals("VI", csv.lines()[1].split(",")[6])
+        assertEquals("VI", csv.lines()[1].split(",")[7])
     }
 
     @Test
@@ -91,7 +107,7 @@ class ExposureCsvWriterTest {
             zoneId = ZoneOffset.UTC,
         )
 
-        val expectedRow = "Roll,1,Lens,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,," +
+        val expectedRow = "Roll,1,Lens,,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,," +
             "\"backlit, metered for shadows\",2023-11-14 22:13,CAPTURED"
         assertEquals(expectedRow, csv.lines()[1])
     }

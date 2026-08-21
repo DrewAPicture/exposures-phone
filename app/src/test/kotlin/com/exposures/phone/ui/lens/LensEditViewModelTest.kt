@@ -2,6 +2,7 @@ package com.exposures.phone.ui.lens
 
 import com.exposures.model.StopIncrement
 import com.exposures.model.CameraBody
+import com.exposures.model.LensType
 import com.exposures.model.ShutterSpeed
 import com.exposures.model.SyncStatus
 import com.exposures.phone.MainDispatcherRule
@@ -186,5 +187,142 @@ class LensEditViewModelTest {
 
         val state = editViewModel.uiState.first { !it.isLoading }
         assertEquals("3.0", state.referencePhotoZoomRatio)
+    }
+
+    @Test
+    fun `a new lens defaults to prime`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(LensType.PRIME, state.lensType)
+    }
+
+    @Test
+    fun `cannot save a prime lens with no focal length`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("Custom Lens")
+        viewModel.setMinAperture("2.8")
+        viewModel.setMaxAperture("32")
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `setting the lens name auto-detects and prefills a prime focal length`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+
+        viewModel.setName("Mamiya-Sekor Z 110mm f/2.8 W")
+
+        assertEquals("110", viewModel.uiState.value.focalLengthMm)
+    }
+
+    @Test
+    fun `auto-detected focal length never overwrites a value already typed in`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setFocalLengthMm("85")
+
+        viewModel.setName("Mamiya-Sekor Z 110mm f/2.8 W")
+
+        assertEquals("85", viewModel.uiState.value.focalLengthMm)
+    }
+
+    @Test
+    fun `auto-detect does not apply once the lens type is zoom`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setLensType(LensType.ZOOM)
+
+        viewModel.setName("24-70mm f/2.8")
+
+        assertEquals("", viewModel.uiState.value.focalLengthMm)
+    }
+
+    @Test
+    fun `save persists a prime lens's focal length`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("50mm f/1.8")
+        viewModel.setMinAperture("1.8")
+        viewModel.setMaxAperture("16")
+        viewModel.setFocalLengthMm("50")
+
+        viewModel.save()
+        viewModel.uiState.first { it.done }
+
+        val saved = repository.observeLenses().first().single()
+        assertEquals(LensType.PRIME, saved.lensType)
+        assertEquals(50, saved.focalLengthMm)
+        assertEquals(null, saved.focalLengthMinMm)
+        assertEquals(null, saved.focalLengthMaxMm)
+    }
+
+    @Test
+    fun `cannot save a zoom lens with an inverted focal length range`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("24-70mm f/2.8")
+        viewModel.setMinAperture("2.8")
+        viewModel.setMaxAperture("22")
+        viewModel.setLensType(LensType.ZOOM)
+        viewModel.setFocalLengthMinMm("70")
+        viewModel.setFocalLengthMaxMm("24")
+
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun `save persists a zoom lens's focal length range`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+        viewModel.uiState.first { !it.isLoading }
+        viewModel.setName("24-70mm f/2.8")
+        viewModel.setMinAperture("2.8")
+        viewModel.setMaxAperture("22")
+        viewModel.setLensType(LensType.ZOOM)
+        viewModel.setFocalLengthMinMm("24")
+        viewModel.setFocalLengthMaxMm("70")
+
+        viewModel.save()
+        viewModel.uiState.first { it.done }
+
+        val saved = repository.observeLenses().first().single()
+        assertEquals(LensType.ZOOM, saved.lensType)
+        assertEquals(null, saved.focalLengthMm)
+        assertEquals(24, saved.focalLengthMinMm)
+        assertEquals(70, saved.focalLengthMaxMm)
+    }
+
+    @Test
+    fun `editing an existing zoom lens loads its lens type and focal length range`() = runTest {
+        val repository = createTestRepository()
+        val gateway = FakeDataLayerGateway()
+        val createViewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, gateway), null)
+        createViewModel.uiState.first { !it.isLoading }
+        createViewModel.setName("24-70mm f/2.8")
+        createViewModel.setMinAperture("2.8")
+        createViewModel.setMaxAperture("22")
+        createViewModel.setLensType(LensType.ZOOM)
+        createViewModel.setFocalLengthMinMm("24")
+        createViewModel.setFocalLengthMaxMm("70")
+        createViewModel.save()
+        val savedId = createViewModel.uiState.first { it.done }.let { repository.observeLenses().first().single().id }
+
+        val editViewModel = LensEditViewModel(repository, EquipmentSyncPusher(repository, gateway), savedId)
+
+        val state = editViewModel.uiState.first { !it.isLoading }
+        assertEquals(LensType.ZOOM, state.lensType)
+        assertEquals("24", state.focalLengthMinMm)
+        assertEquals("70", state.focalLengthMaxMm)
     }
 }

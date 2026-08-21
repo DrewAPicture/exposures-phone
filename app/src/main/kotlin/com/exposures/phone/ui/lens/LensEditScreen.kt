@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.exposures.model.LensType
 import com.exposures.model.StopIncrement
 import com.exposures.phone.ExposuresViewModelFactory
 import com.exposures.phone.ui.appContainer
@@ -72,6 +73,41 @@ fun LensEditScreen(id: String?, onDone: () -> Unit) {
                 onValueChange = viewModel::setStopIncrement,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
+            DropdownField(
+                label = "Lens Type",
+                value = state.lensType,
+                options = LensType.entries,
+                optionLabel = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
+                onValueChange = viewModel::setLensType,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            if (state.lensType == LensType.PRIME) {
+                OutlinedTextField(
+                    value = state.focalLengthMm,
+                    onValueChange = viewModel::setFocalLengthMm,
+                    label = { Text("Focal Length") },
+                    suffix = { Text("mm") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+            } else {
+                OutlinedTextField(
+                    value = state.focalLengthMinMm,
+                    onValueChange = viewModel::setFocalLengthMinMm,
+                    label = { Text("Focal Length (min)") },
+                    suffix = { Text("mm") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+                OutlinedTextField(
+                    value = state.focalLengthMaxMm,
+                    onValueChange = viewModel::setFocalLengthMaxMm,
+                    label = { Text("Focal Length (max)") },
+                    suffix = { Text("mm") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                )
+            }
             OutlinedTextField(
                 value = state.referencePhotoZoomRatio,
                 onValueChange = viewModel::setReferencePhotoZoomRatio,

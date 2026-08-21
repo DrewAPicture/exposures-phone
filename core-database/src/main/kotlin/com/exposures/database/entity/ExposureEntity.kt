@@ -20,6 +20,7 @@ data class ExposureEntity(
     val filmRollId: String,
     val frameNumber: Int,
     val lensId: String,
+    val focalLengthMm: Int?,
     val shutterSpeed: ShutterSpeed,
     val aperture: Double,
     val isoUsed: Int,

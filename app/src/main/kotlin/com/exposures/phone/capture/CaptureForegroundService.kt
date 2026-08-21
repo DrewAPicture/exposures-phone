@@ -175,7 +175,7 @@ class CaptureForegroundService : LifecycleService() {
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, "$exposureId.jpg")
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Exposures/$filmRollId")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/${CaptureFileNaming.ROOT_DIR_NAME}/$filmRollId")
             }
             return CaptureDestination(
                 outputOptions = ImageCapture.OutputFileOptions.Builder(

@@ -12,7 +12,16 @@ class CaptureFileNamingTest {
 
         val file = CaptureFileNaming.outputFile(baseDir, filmRollId = "roll-1", exposureId = "exp-1")
 
-        assertEquals(File("/base/roll-1/exp-1.jpg"), file)
+        assertEquals(File("/base/Exposures/roll-1/exp-1.jpg"), file)
+    }
+
+    @Test
+    fun `output file is nested under the shared Exposures root folder`() {
+        val baseDir = File("/base")
+
+        val file = CaptureFileNaming.outputFile(baseDir, filmRollId = "roll-1", exposureId = "exp-1")
+
+        assertEquals(CaptureFileNaming.ROOT_DIR_NAME, file.parentFile?.parentFile?.name)
     }
 
     @Test

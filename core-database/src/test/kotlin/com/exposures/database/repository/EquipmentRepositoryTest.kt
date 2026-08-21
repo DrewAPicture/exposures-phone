@@ -305,6 +305,18 @@ class EquipmentRepositoryTest {
     }
 
     @Test
+    fun `mergeExposureSync takes the incoming isFavorite value, unlike the preserved photo status`() = runTest {
+        val original = exposure("roll-1", 1)
+        repository.mergeExposureSync(listOf(original))
+
+        // isFavorite is watch-authoritative (unlike referencePhotoStatus/syncStatus/remoteId) — a
+        // re-sync should apply it just like any other watch-owned field, not preserve a stale local value.
+        repository.mergeExposureSync(listOf(original.copy(isFavorite = true)))
+
+        assertEquals(true, repository.observeExposures("roll-1").first().single().isFavorite)
+    }
+
+    @Test
     fun `updateExposurePhotoStatus only touches the targeted exposure`() = runTest {
         val a = exposure("roll-1", 1)
         val b = exposure("roll-1", 2)

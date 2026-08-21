@@ -28,7 +28,7 @@ import com.exposures.database.entity.ReferencePhotoEntity
         ExposureEntity::class,
         ReferencePhotoEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

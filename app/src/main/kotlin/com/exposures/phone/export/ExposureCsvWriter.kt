@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter
 object ExposureCsvWriter {
     private val HEADER = listOf(
         "Roll", "Frame", "Lens", "Focal Length (mm)", "Shutter Speed", "Aperture", "ISO", "Zone", "Notes",
-        "Captured At", "Photo Status",
+        "Captured At", "Photo Status", "Favorite",
     )
     private val TIMESTAMP_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
@@ -40,6 +40,7 @@ object ExposureCsvWriter {
                 exposure.notes.orEmpty(),
                 formatTimestamp(exposure.capturedAt, zoneId),
                 exposure.referencePhotoStatus.name,
+                if (exposure.isFavorite) "Y" else "N",
             )
         }
         return (listOf(HEADER) + rows).joinToString("\n") { row -> row.joinToString(",", transform = ::escapeField) }

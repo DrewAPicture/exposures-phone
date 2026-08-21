@@ -20,11 +20,12 @@ class ExposureCsvWriterTest {
         zone: Int? = null,
         notes: String? = null,
         capturedAt: Long = 0L,
+        isFavorite: Boolean = false,
     ) = Exposure(
         id = id, filmRollId = filmRollId, frameNumber = frameNumber, lensId = lensId, focalLengthMm = focalLengthMm,
         shutterSpeed = ShutterSpeed.fraction(125), aperture = 8.0, isoUsed = 400, zone = zone, notes = notes,
         capturedAt = capturedAt, referencePhotoStatus = PhotoStatus.CAPTURED, createdAt = 0L, updatedAt = 0L,
-        syncStatus = SyncStatus.SYNCED, remoteId = null,
+        syncStatus = SyncStatus.SYNCED, remoteId = null, isFavorite = isFavorite,
     )
 
     @Test
@@ -38,7 +39,7 @@ class ExposureCsvWriterTest {
 
         val lines = csv.lines()
         assertEquals(
-            "Roll,Frame,Lens,Focal Length (mm),Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status",
+            "Roll,Frame,Lens,Focal Length (mm),Shutter Speed,Aperture,ISO,Zone,Notes,Captured At,Photo Status,Favorite",
             lines[0],
         )
         assertEquals(2, lines.size)
@@ -55,9 +56,25 @@ class ExposureCsvWriterTest {
 
         val row = csv.lines()[1]
         assertEquals(
-            "Portra 400 — Roll 1,1,110mm f/2.8 W,110,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,,,2023-11-14 22:13,CAPTURED",
+            "Portra 400 — Roll 1,1,110mm f/2.8 W,110,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,,,2023-11-14 22:13,CAPTURED,N",
             row,
         )
+    }
+
+    @Test
+    fun `isFavorite renders as Y or N`() {
+        val csv = ExposureCsvWriter.write(
+            exposures = listOf(
+                exposure(id = "a", filmRollId = "roll-1", frameNumber = 1, isFavorite = true),
+                exposure(id = "b", filmRollId = "roll-1", frameNumber = 2, isFavorite = false),
+            ),
+            rollNames = mapOf("roll-1" to "Roll"),
+            lensNames = mapOf("lens-1" to "Lens"),
+            zoneId = ZoneOffset.UTC,
+        )
+
+        val favoriteColumn = csv.lines().drop(1).map { it.split(",").last() }
+        assertEquals(listOf("Y", "N"), favoriteColumn)
     }
 
     @Test
@@ -108,7 +125,7 @@ class ExposureCsvWriterTest {
         )
 
         val expectedRow = "Roll,1,Lens,,${ShutterSpeed.fraction(125).label},ƒ/8.0,400,," +
-            "\"backlit, metered for shadows\",2023-11-14 22:13,CAPTURED"
+            "\"backlit, metered for shadows\",2023-11-14 22:13,CAPTURED,N"
         assertEquals(expectedRow, csv.lines()[1])
     }
 

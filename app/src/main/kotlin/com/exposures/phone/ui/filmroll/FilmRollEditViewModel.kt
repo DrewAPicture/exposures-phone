@@ -29,7 +29,7 @@ data class FilmRollEditUiState(
     val filmStock: String = "",
     val boxSpeedIso: String = "",
     val format: FilmFormat = FilmFormat.MEDIUM_FORMAT_120,
-    val colorType: FilmColorType = FilmColorType.COLOR,
+    val colorType: FilmColorType = FilmColorType.BLACK_AND_WHITE,
     val cameraBodyId: String? = null,
     val lightMeterId: String? = null,
     val filmBackId: String? = null,

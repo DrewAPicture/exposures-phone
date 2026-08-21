@@ -153,6 +153,16 @@ class FilmRollEditViewModelTest {
     }
 
     @Test
+    fun `defaults to black and white for a new roll`() = runTest {
+        val repository = createTestRepository()
+        val viewModel = FilmRollEditViewModel(repository, EquipmentSyncPusher(repository, FakeDataLayerGateway()), null)
+
+        val state = viewModel.uiState.first { !it.isLoading }
+
+        assertEquals(FilmColorType.BLACK_AND_WHITE, state.colorType)
+    }
+
+    @Test
     fun `defaults to no light meter when none is selected`() = runTest {
         val repository = createTestRepository()
         seededCameraBody(repository)

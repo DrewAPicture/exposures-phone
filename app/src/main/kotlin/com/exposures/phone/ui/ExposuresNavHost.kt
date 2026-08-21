@@ -45,7 +45,7 @@ fun ExposuresNavHost() {
             )
         }
         composable(Routes.SETTINGS) {
-            SettingsScreen()
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.CAMERA_BODY_LIST) {
